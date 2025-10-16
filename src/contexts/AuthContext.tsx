@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
-import { supabase, User } from '../lib/supabase';
+import { User, UserRole } from '../lib/supabase';
 
 interface AuthContextType {
   user: SupabaseUser | null;
@@ -21,83 +21,88 @@ export const useAuth = () => {
   return context;
 };
 
+const MOCK_USERS: User[] = [
+  {
+    id: 'collector-001',
+    email: 'collector@foodtrace.com',
+    full_name: 'John Collector',
+    role: 'collector',
+    organization: 'FreshFarms Co.',
+    phone: '+1-555-0101',
+    wallet_address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb8',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'tester-001',
+    email: 'tester@foodtrace.com',
+    full_name: 'Sarah Tester',
+    role: 'tester',
+    organization: 'Quality Labs Inc.',
+    phone: '+1-555-0102',
+    wallet_address: '0x8ba1f109551bD432803012645Ac136ddd64DBA72',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'processor-001',
+    email: 'processor@foodtrace.com',
+    full_name: 'Mike Processor',
+    role: 'processor',
+    organization: 'ProcessPro Solutions',
+    phone: '+1-555-0103',
+    wallet_address: '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'manufacturer-001',
+    email: 'manufacturer@foodtrace.com',
+    full_name: 'Emily Manufacturer',
+    role: 'manufacturer',
+    organization: 'FoodCorp Manufacturing',
+    phone: '+1-555-0104',
+    wallet_address: '0x2546BcD3c84621e976D8185a91A922aE77ECEc30',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      (async () => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchUserProfile(session.user.id);
-        }
-        setLoading(false);
-      })();
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      (async () => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchUserProfile(session.user.id);
-        } else {
-          setUserProfile(null);
-        }
-      })();
-    });
-
-    return () => subscription.unsubscribe();
+    const storedUser = localStorage.getItem('mockUser');
+    if (storedUser) {
+      const profile = JSON.parse(storedUser);
+      setUserProfile(profile);
+      setUser({ id: profile.id, email: profile.email } as SupabaseUser);
+    }
+    setLoading(false);
   }, []);
 
-  const fetchUserProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (data) {
-      setUserProfile(data);
-    }
-  };
-
   const signUp = async (email: string, password: string, fullName: string, role: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (error) throw error;
-
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: data.user.id,
-          email,
-          full_name: fullName,
-          role,
-        });
-
-      if (profileError) throw profileError;
-    }
+    throw new Error('Sign up is disabled in mock mode. Please use one of the demo accounts.');
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const mockUser = MOCK_USERS.find(u => u.email === email);
 
-    if (error) throw error;
+    if (!mockUser) {
+      throw new Error('Invalid credentials. Use: collector@foodtrace.com, tester@foodtrace.com, processor@foodtrace.com, or manufacturer@foodtrace.com');
+    }
+
+    setUserProfile(mockUser);
+    setUser({ id: mockUser.id, email: mockUser.email } as SupabaseUser);
+    localStorage.setItem('mockUser', JSON.stringify(mockUser));
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    setUser(null);
     setUserProfile(null);
+    localStorage.removeItem('mockUser');
   };
 
   return (

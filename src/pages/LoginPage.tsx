@@ -52,6 +52,18 @@ export const LoginPage = ({ onBack }: LoginPageProps) => {
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl border border-emerald-100 p-8">
+          {!isSignUp && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm font-semibold text-blue-900 mb-2">Demo Accounts:</p>
+              <ul className="text-xs text-blue-700 space-y-1">
+                <li>• collector@foodtrace.com (Collector)</li>
+                <li>• tester@foodtrace.com (Tester)</li>
+                <li>• processor@foodtrace.com (Processor)</li>
+                <li>• manufacturer@foodtrace.com (Manufacturer)</li>
+              </ul>
+              <p className="text-xs text-blue-600 mt-2">Password: any value</p>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-5">
             {isSignUp && (
               <>
