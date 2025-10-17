@@ -138,6 +138,12 @@ export default function CollectorDashboard() {
     return (pricePerUnit * weightTotal).toFixed(2);
   };
 
+  const generateBatchNumber = () => {
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+    return `BATCH-${date}-${random}`;
+  };
+
   const generateQRCodeData = (batchNumber: string) => {
     return JSON.stringify({
       batchNumber,
@@ -158,12 +164,7 @@ export default function CollectorDashboard() {
     setIsSubmitting(true);
 
     try {
-      const { data: batchNumberData, error: batchNumberError } = await supabase
-        .rpc('generate_batch_number');
-
-      if (batchNumberError) throw batchNumberError;
-
-      const batchNumber = batchNumberData as string;
+      const batchNumber = generateBatchNumber();
       const qrCodeData = generateQRCodeData(batchNumber);
       const totalPrice = calculateTotalPrice();
 
