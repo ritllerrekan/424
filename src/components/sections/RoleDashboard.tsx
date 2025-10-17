@@ -2,6 +2,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import CollectorDashboard from './CollectorDashboard';
 import TesterDashboard from './TesterDashboard';
 import ProcessorDashboard from './ProcessorDashboard';
+import ManufacturerDashboard from './ManufacturerDashboard';
 
 export const RoleDashboard = () => {
   const { userProfile } = useAuth();
@@ -16,6 +17,10 @@ export const RoleDashboard = () => {
 
   if (userProfile?.role === 'processor') {
     return <ProcessorDashboard />;
+  }
+
+  if (userProfile?.role === 'manufacturer') {
+    return <ManufacturerDashboard />;
   }
 
   return (
