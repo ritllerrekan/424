@@ -1,7 +1,16 @@
-import { useState } from 'react';
-import { User, Mail, Building, Phone, Wallet, Save } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Mail, Building, Phone, Wallet, Save, Star, Package, Award, TrendingUp, Calendar } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+
+interface ProfileStats {
+  totalBatches: number;
+  averageRating: number;
+  totalRatings: number;
+  completedBatches: number;
+  activeBatches: number;
+  joinedDate: string;
+}
 
 export const ProfileSection = () => {
   const { userProfile } = useAuth();
@@ -12,6 +21,61 @@ export const ProfileSection = () => {
   const [walletAddress, setWalletAddress] = useState(userProfile?.wallet_address || '');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [stats, setStats] = useState<ProfileStats>({
+    totalBatches: 0,
+    averageRating: 0,
+    totalRatings: 0,
+    completedBatches: 0,
+    activeBatches: 0,
+    joinedDate: new Date().toISOString(),
+  });
+
+  useEffect(() => {
+    if (userProfile) {
+      loadProfileStats();
+    }
+  }, [userProfile]);
+
+  const loadProfileStats = () => {
+    const mockStats: Record<string, ProfileStats> = {
+      'collector-001': {
+        totalBatches: 127,
+        averageRating: 4.7,
+        totalRatings: 98,
+        completedBatches: 115,
+        activeBatches: 12,
+        joinedDate: '2023-05-15',
+      },
+      'tester-001': {
+        totalBatches: 89,
+        averageRating: 4.9,
+        totalRatings: 76,
+        completedBatches: 85,
+        activeBatches: 4,
+        joinedDate: '2023-06-20',
+      },
+      'processor-001': {
+        totalBatches: 156,
+        averageRating: 4.6,
+        totalRatings: 134,
+        completedBatches: 148,
+        activeBatches: 8,
+        joinedDate: '2023-04-10',
+      },
+      'manufacturer-001': {
+        totalBatches: 201,
+        averageRating: 4.8,
+        totalRatings: 187,
+        completedBatches: 195,
+        activeBatches: 6,
+        joinedDate: '2023-03-01',
+      },
+    };
+
+    if (userProfile && mockStats[userProfile.id]) {
+      setStats(mockStats[userProfile.id]);
+    }
+  };
 
   const handleSave = async () => {
     if (!userProfile) return;
@@ -45,6 +109,23 @@ export const ProfileSection = () => {
 
   if (!userProfile) return null;
 
+  const getRatingColor = (rating: number) => {
+    if (rating >= 4.5) return 'text-green-600';
+    if (rating >= 4.0) return 'text-blue-600';
+    if (rating >= 3.5) return 'text-yellow-600';
+    return 'text-orange-600';
+  };
+
+  const getNextRaterRole = () => {
+    const roleFlow: Record<string, string> = {
+      collector: 'Tester',
+      tester: 'Processor',
+      processor: 'Manufacturer',
+      manufacturer: 'Distributor/Retailer',
+    };
+    return roleFlow[userProfile.role] || 'Next Stage';
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -64,6 +145,56 @@ export const ProfileSection = () => {
           {message}
         </div>
       )}
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm border border-blue-200 p-6">
+          <div className="flex items-center justify-between mb-2">
+            <Package className="w-8 h-8 text-blue-600" />
+          </div>
+          <p className="text-2xl font-bold text-blue-900">{stats.totalBatches}</p>
+          <p className="text-sm text-blue-700">Total Batches</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl shadow-sm border border-emerald-200 p-6">
+          <div className="flex items-center justify-between mb-2">
+            <Award className="w-8 h-8 text-emerald-600" />
+          </div>
+          <p className="text-2xl font-bold text-emerald-900">{stats.completedBatches}</p>
+          <p className="text-sm text-emerald-700">Completed</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl shadow-sm border border-yellow-200 p-6">
+          <div className="flex items-center justify-between mb-2">
+            <TrendingUp className="w-8 h-8 text-yellow-600" />
+          </div>
+          <p className="text-2xl font-bold text-yellow-900">{stats.activeBatches}</p>
+          <p className="text-sm text-yellow-700">Active Batches</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-sm border border-purple-200 p-6">
+          <div className="flex items-center justify-between mb-2">
+            <Star className="w-8 h-8 text-purple-600" />
+          </div>
+          <div className="flex items-baseline space-x-2">
+            <p className={`text-2xl font-bold ${getRatingColor(stats.averageRating)}`}>
+              {stats.averageRating.toFixed(1)}
+            </p>
+            <div className="flex">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`w-3 h-3 ${
+                    star <= Math.round(stats.averageRating)
+                      ? 'text-yellow-500 fill-yellow-500'
+                      : 'text-gray-300'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+          <p className="text-sm text-purple-700">{stats.totalRatings} Ratings</p>
+        </div>
+      </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-emerald-100 p-8">
         <div className="grid md:grid-cols-2 gap-6">
@@ -150,8 +281,35 @@ export const ProfileSection = () => {
 
           <div>
             <label className="block text-sm font-medium text-emerald-900 mb-2">Role</label>
-            <div className="inline-flex items-center px-3 py-2 bg-emerald-100 text-emerald-700 rounded-lg font-medium">
+            <div className="inline-flex items-center px-3 py-2 bg-emerald-100 text-emerald-700 rounded-lg font-medium capitalize">
               {userProfile.role}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-emerald-900 mb-2">
+              <Calendar className="inline w-4 h-4 mr-2" />
+              Member Since
+            </label>
+            <p className="text-emerald-700 py-2">
+              {new Date(stats.joinedDate).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+          <div className="flex items-start space-x-3">
+            <Star className="w-5 h-5 text-blue-600 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-blue-900 mb-1">Rating Information</h3>
+              <p className="text-sm text-blue-700">
+                Your performance is rated by <span className="font-semibold">{getNextRaterRole()}</span> users in the supply chain.
+                Maintain quality standards to improve your rating and build trust within the network.
+              </p>
             </div>
           </div>
         </div>
