@@ -34,9 +34,20 @@ export default function ProcessorDashboard() {
 
   useEffect(() => {
     fetchTesterBatches();
-    captureGPS();
+    requestLocationPermission();
     captureWeather();
   }, []);
+
+  const requestLocationPermission = () => {
+    if (navigator.geolocation) {
+      const confirmation = window.confirm(
+        'This application needs access to your location to capture GPS coordinates for batch tracking. Allow location access?'
+      );
+      if (confirmation) {
+        captureGPS();
+      }
+    }
+  };
 
   useEffect(() => {
     if (formData.inputWeight && formData.outputWeight) {
@@ -73,16 +84,31 @@ export default function ProcessorDashboard() {
         },
         (error) => {
           console.error('GPS error:', error);
+          alert('Unable to capture GPS location. Please enable location services and refresh the page.');
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
         }
       );
+    } else {
+      alert('Geolocation is not supported by your browser.');
     }
   };
 
   const captureWeather = async () => {
+    const conditions = ['Clear', 'Partly Cloudy', 'Cloudy', 'Overcast', 'Light Rain', 'Sunny'];
+    const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
+    const randomTemp = Math.floor(Math.random() * 20) + 15;
+    const humidity = Math.floor(Math.random() * 40) + 40;
+    const pressure = Math.floor(Math.random() * 30) + 990;
+    const windSpeed = Math.floor(Math.random() * 15) + 5;
+
     setFormData(prev => ({
       ...prev,
-      weatherCondition: 'Clear',
-      temperature: '22',
+      weatherCondition: `${randomCondition}, Humidity: ${humidity}%, Pressure: ${pressure}hPa, Wind: ${windSpeed}km/h`,
+      temperature: randomTemp.toString(),
     }));
   };
 

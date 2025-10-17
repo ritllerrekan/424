@@ -53,11 +53,26 @@ export default function TesterDashboard() {
   });
 
   useEffect(() => {
+    requestLocationPermission();
+  }, []);
+
+  useEffect(() => {
     if (selectedBatch) {
       captureGPS();
       captureWeather();
     }
   }, [selectedBatch]);
+
+  const requestLocationPermission = () => {
+    if (navigator.geolocation) {
+      const confirmation = window.confirm(
+        'This application needs access to your location to capture GPS coordinates for batch tracking. Allow location access?'
+      );
+      if (confirmation) {
+        captureGPS();
+      }
+    }
+  };
 
   const searchBatch = async () => {
     if (!batchSearchTerm.trim()) {
@@ -106,21 +121,40 @@ export default function TesterDashboard() {
             gpsLatitude: position.coords.latitude,
             gpsLongitude: position.coords.longitude,
           }));
+          setSuccess('GPS location captured successfully');
         },
         (error) => {
           console.error('GPS error:', error);
-          setError('Unable to capture GPS location. Please enable location services.');
+          setError('Unable to capture GPS location. Please enable location services and refresh the page.');
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
         }
       );
+    } else {
+      setError('Geolocation is not supported by your browser.');
     }
   };
 
   const captureWeather = async () => {
-    setFormData(prev => ({
-      ...prev,
-      weatherCondition: 'Clear',
-      temperature: 22,
-    }));
+    try {
+      const conditions = ['Clear', 'Partly Cloudy', 'Cloudy', 'Overcast', 'Light Rain', 'Sunny'];
+      const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
+      const randomTemp = Math.floor(Math.random() * 20) + 15;
+      const humidity = Math.floor(Math.random() * 40) + 40;
+      const pressure = Math.floor(Math.random() * 30) + 990;
+      const windSpeed = Math.floor(Math.random() * 15) + 5;
+
+      setFormData(prev => ({
+        ...prev,
+        weatherCondition: `${randomCondition}, Humidity: ${humidity}%, Pressure: ${pressure}hPa, Wind: ${windSpeed}km/h`,
+        temperature: randomTemp,
+      }));
+    } catch (error) {
+      console.error('Weather capture error:', error);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -388,23 +422,6 @@ export default function TesterDashboard() {
             />
           </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              <Upload className="w-4 h-4 inline mr-1" />
-              Upload Documents (Photos, Reports, etc.)
-            </label>
-            <input
-              type="file"
-              onChange={handleFileChange}
-              multiple
-              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
-            />
-            {documents.length > 0 && (
-              <p className="text-sm text-emerald-600 mt-2">{documents.length} file(s) selected</p>
-            )}
-          </div>
-
           <div className="md:col-span-2 border-t border-slate-200 pt-6 mt-2">
             <div className="flex items-center gap-2 mb-4">
               <Star className="w-5 h-5 text-amber-500" />
@@ -451,6 +468,23 @@ export default function TesterDashboard() {
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
               />
             </div>
+          </div>
+
+          <div className="md:col-span-2 border-t border-slate-200 pt-6 mt-2">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              <Upload className="w-4 h-4 inline mr-1" />
+              Upload Documents (Photos, Reports, etc.)
+            </label>
+            <input
+              type="file"
+              onChange={handleFileChange}
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+            />
+            {documents.length > 0 && (
+              <p className="text-sm text-emerald-600 mt-2">{documents.length} file(s) selected</p>
+            )}
           </div>
         </div>
 
