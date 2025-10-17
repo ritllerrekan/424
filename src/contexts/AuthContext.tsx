@@ -30,7 +30,7 @@ const MOCK_USERS: User[] = [
     organization: 'FreshFarms Co.',
     phone: '+1-555-0101',
     wallet_address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb8',
-    created_at: new Date().toISOString(),
+    created_at: '2024-01-15T08:00:00Z',
     updated_at: new Date().toISOString(),
   },
   {
@@ -41,7 +41,7 @@ const MOCK_USERS: User[] = [
     organization: 'Quality Labs Inc.',
     phone: '+1-555-0102',
     wallet_address: '0x8ba1f109551bD432803012645Ac136ddd64DBA72',
-    created_at: new Date().toISOString(),
+    created_at: '2024-02-10T09:30:00Z',
     updated_at: new Date().toISOString(),
   },
   {
@@ -52,7 +52,7 @@ const MOCK_USERS: User[] = [
     organization: 'ProcessPro Solutions',
     phone: '+1-555-0103',
     wallet_address: '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c',
-    created_at: new Date().toISOString(),
+    created_at: '2024-01-05T10:15:00Z',
     updated_at: new Date().toISOString(),
   },
   {
@@ -63,7 +63,7 @@ const MOCK_USERS: User[] = [
     organization: 'FoodCorp Manufacturing',
     phone: '+1-555-0104',
     wallet_address: '0x2546BcD3c84621e976D8185a91A922aE77ECEc30',
-    created_at: new Date().toISOString(),
+    created_at: '2023-12-20T07:45:00Z',
     updated_at: new Date().toISOString(),
   },
 ];

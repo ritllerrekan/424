@@ -36,45 +36,17 @@ export const ProfileSection = () => {
     }
   }, [userProfile]);
 
-  const loadProfileStats = () => {
-    const mockStats: Record<string, ProfileStats> = {
-      'collector-001': {
-        totalBatches: 127,
-        averageRating: 4.7,
-        totalRatings: 98,
-        completedBatches: 115,
-        activeBatches: 12,
-        joinedDate: '2023-05-15',
-      },
-      'tester-001': {
-        totalBatches: 89,
-        averageRating: 4.9,
-        totalRatings: 76,
-        completedBatches: 85,
-        activeBatches: 4,
-        joinedDate: '2023-06-20',
-      },
-      'processor-001': {
-        totalBatches: 156,
-        averageRating: 4.6,
-        totalRatings: 134,
-        completedBatches: 148,
-        activeBatches: 8,
-        joinedDate: '2023-04-10',
-      },
-      'manufacturer-001': {
-        totalBatches: 201,
-        averageRating: 4.8,
-        totalRatings: 187,
-        completedBatches: 195,
-        activeBatches: 6,
-        joinedDate: '2023-03-01',
-      },
-    };
+  const loadProfileStats = async () => {
+    if (!userProfile) return;
 
-    if (userProfile && mockStats[userProfile.id]) {
-      setStats(mockStats[userProfile.id]);
-    }
+    setStats({
+      totalBatches: 0,
+      averageRating: 0,
+      totalRatings: 0,
+      completedBatches: 0,
+      activeBatches: 0,
+      joinedDate: userProfile.created_at,
+    });
   };
 
   const handleSave = async () => {
