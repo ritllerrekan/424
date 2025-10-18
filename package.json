@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
+    "@biconomy/account": "^4.5.2",
     "@biconomy/mexa": "^2.0.38",
     "@supabase/supabase-js": "^2.57.4",
     "@web3auth/base": "^8.12.4",
