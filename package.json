@@ -12,12 +12,20 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
+    "@web3auth/base": "^8.12.4",
+    "@web3auth/ethereum-provider": "^8.12.4",
+    "@web3auth/modal": "^8.12.4",
+    "ethers": "^6.13.0",
+    "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.344.0",
+    "qrcode": "^1.5.3",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "recharts": "^2.12.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
