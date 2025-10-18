@@ -67,6 +67,16 @@ export default function ProcessorDashboard() {
     e.preventDefault();
     if (!user) return;
 
+    if (!location.latitude || !location.longitude) {
+      alert('Please wait for GPS location to be captured');
+      return;
+    }
+
+    if (!weather.temperature || !weather.condition) {
+      alert('Please wait for weather data to be captured');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {

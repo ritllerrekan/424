@@ -112,6 +112,16 @@ export default function TesterDashboard() {
       return;
     }
 
+    if (!location.latitude || !location.longitude) {
+      setError('Please wait for GPS location to be captured');
+      return;
+    }
+
+    if (!weather.temperature || !weather.condition) {
+      setError('Please wait for weather data to be captured');
+      return;
+    }
+
     setLoading(true);
     setError('');
     setSuccess('');
