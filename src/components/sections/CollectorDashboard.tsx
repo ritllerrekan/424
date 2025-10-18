@@ -12,6 +12,9 @@ interface LocationData {
 interface WeatherData {
   condition: string;
   temperature: number;
+  humidity: number;
+  pressure: number;
+  windSpeed: number;
 }
 
 interface FormData {
@@ -38,7 +41,13 @@ interface SubmittedBatch {
 export default function CollectorDashboard() {
   const { user } = useAuth();
   const [location, setLocation] = useState<LocationData>({ latitude: null, longitude: null });
-  const [weather, setWeather] = useState<WeatherData>({ condition: 'Sunny', temperature: 25 });
+  const [weather, setWeather] = useState<WeatherData>({
+    condition: 'Sunny',
+    temperature: 25,
+    humidity: 60,
+    pressure: 1013,
+    windSpeed: 10
+  });
   const [documents, setDocuments] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedBatch, setSubmittedBatch] = useState<SubmittedBatch | null>(null);
@@ -67,6 +76,7 @@ export default function CollectorDashboard() {
       );
       if (confirmation) {
         captureGPS();
+        captureWeather();
       }
     }
   };
@@ -109,11 +119,14 @@ export default function CollectorDashboard() {
     const randomTemp = Math.floor(Math.random() * 20) + 15;
     const humidity = Math.floor(Math.random() * 40) + 40;
     const pressure = Math.floor(Math.random() * 30) + 990;
-    const windSpeed = Math.floor(Math.random() * 15) + 5;
+    const windSpeed = parseFloat((Math.random() * 15 + 5).toFixed(1));
 
     setWeather({
-      condition: `${randomCondition}, Humidity: ${humidity}%, Pressure: ${pressure}hPa, Wind: ${windSpeed}km/h`,
+      condition: randomCondition,
       temperature: randomTemp,
+      humidity: humidity,
+      pressure: pressure,
+      windSpeed: windSpeed,
     });
   };
 
@@ -376,40 +389,66 @@ export default function CollectorDashboard() {
           <p className="text-gray-600">Submit harvest information to the supply chain</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <div className="text-sm text-gray-500">GPS Location</div>
-                <div className="font-semibold text-gray-900">Auto-Captured</div>
-              </div>
-            </div>
-            {location.error ? (
-              <div className="text-red-600 text-sm">{location.error}</div>
-            ) : location.latitude && location.longitude ? (
-              <div className="text-sm text-gray-600">
-                {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
-              </div>
-            ) : (
-              <div className="text-sm text-gray-500">Capturing location...</div>
-            )}
-          </div>
+        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl shadow-lg p-6 mb-8 border border-blue-200">
+          <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <MapPin className="w-6 h-6 text-blue-600" />
+            Location & Weather Conditions
+          </h3>
 
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                <Cloud className="w-5 h-5 text-orange-600" />
-              </div>
-              <div>
-                <div className="text-sm text-gray-500">Weather</div>
-                <div className="font-semibold text-gray-900">Auto-Captured</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <div className="text-sm font-medium text-slate-600 mb-3">GPS Location (Auto-captured)</div>
+              <div className="space-y-2">
+                <div className="bg-white rounded-lg p-4 border border-blue-100">
+                  <div className="text-xs text-slate-500">Latitude</div>
+                  <div className="text-base font-semibold text-slate-800">
+                    {location.error ? (
+                      <span className="text-red-600 text-sm">{location.error}</span>
+                    ) : location.latitude ? (
+                      location.latitude.toFixed(6)
+                    ) : (
+                      <span className="text-slate-400">Capturing...</span>
+                    )}
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg p-4 border border-blue-100">
+                  <div className="text-xs text-slate-500">Longitude</div>
+                  <div className="text-base font-semibold text-slate-800">
+                    {location.error ? (
+                      <span className="text-red-600 text-sm">{location.error}</span>
+                    ) : location.longitude ? (
+                      location.longitude.toFixed(6)
+                    ) : (
+                      <span className="text-slate-400">Capturing...</span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="text-sm text-gray-600">
-              {weather.condition}, {weather.temperature}°C
+
+            <div>
+              <div className="text-sm font-medium text-slate-600 mb-3 flex items-center gap-2">
+                <Cloud className="w-4 h-4 text-blue-600" />
+                Weather Conditions (Auto-captured)
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white rounded-lg p-4 border border-blue-100">
+                  <div className="text-xs text-blue-600 font-medium">Temperature</div>
+                  <div className="text-2xl font-bold text-slate-800">{weather.temperature}°C</div>
+                </div>
+                <div className="bg-white rounded-lg p-4 border border-blue-100">
+                  <div className="text-xs text-blue-600 font-medium">Humidity</div>
+                  <div className="text-2xl font-bold text-slate-800">{weather.humidity}%</div>
+                </div>
+                <div className="bg-white rounded-lg p-4 border border-blue-100">
+                  <div className="text-xs text-blue-600 font-medium">Conditions</div>
+                  <div className="text-sm font-semibold text-slate-800">{weather.condition}</div>
+                </div>
+                <div className="bg-white rounded-lg p-4 border border-blue-100">
+                  <div className="text-xs text-blue-600 font-medium">Wind</div>
+                  <div className="text-sm font-semibold text-slate-800">{weather.windSpeed} km/h</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

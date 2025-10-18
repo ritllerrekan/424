@@ -28,12 +28,14 @@ export default function ManufacturerDashboard() {
     gpsLongitude: '',
     weatherCondition: '',
     temperature: '',
+    humidity: '',
+    pressure: '',
+    windSpeed: '',
   });
 
   useEffect(() => {
     fetchProcessorBatches();
     requestLocationPermission();
-    captureWeather();
   }, []);
 
   const requestLocationPermission = () => {
@@ -43,6 +45,7 @@ export default function ManufacturerDashboard() {
       );
       if (confirmation) {
         captureGPS();
+        captureWeather();
       }
     }
   };
@@ -90,12 +93,15 @@ export default function ManufacturerDashboard() {
     const randomTemp = Math.floor(Math.random() * 20) + 15;
     const humidity = Math.floor(Math.random() * 40) + 40;
     const pressure = Math.floor(Math.random() * 30) + 990;
-    const windSpeed = Math.floor(Math.random() * 15) + 5;
+    const windSpeed = (Math.random() * 15 + 5).toFixed(1);
 
     setFormData(prev => ({
       ...prev,
-      weatherCondition: `${randomCondition}, Humidity: ${humidity}%, Pressure: ${pressure}hPa, Wind: ${windSpeed}km/h`,
+      weatherCondition: randomCondition,
       temperature: randomTemp.toString(),
+      humidity: humidity.toString(),
+      pressure: pressure.toString(),
+      windSpeed: windSpeed,
     }));
   };
 
@@ -173,6 +179,9 @@ export default function ManufacturerDashboard() {
         gpsLongitude: '',
         weatherCondition: '',
         temperature: '',
+        humidity: '',
+        pressure: '',
+        windSpeed: '',
       });
       setSelectedFiles(null);
       captureGPS();
@@ -283,49 +292,51 @@ export default function ManufacturerDashboard() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
-              GPS Location (Auto-captured)
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={formData.gpsLatitude}
-                readOnly
-                className="flex-1 px-4 py-2 border border-slate-300 rounded-lg bg-slate-50"
-                placeholder="Latitude"
-              />
-              <input
-                type="text"
-                value={formData.gpsLongitude}
-                readOnly
-                className="flex-1 px-4 py-2 border border-slate-300 rounded-lg bg-slate-50"
-                placeholder="Longitude"
-              />
-            </div>
-          </div>
+          <div className="md:col-span-2 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border border-blue-200">
+            <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-blue-600" />
+              Location & Weather Conditions
+            </h3>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
-              <Cloud className="w-4 h-4" />
-              Weather (Auto-captured)
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={formData.weatherCondition}
-                readOnly
-                className="flex-1 px-4 py-2 border border-slate-300 rounded-lg bg-slate-50"
-                placeholder="Condition"
-              />
-              <input
-                type="text"
-                value={formData.temperature ? `${formData.temperature}°C` : ''}
-                readOnly
-                className="w-24 px-4 py-2 border border-slate-300 rounded-lg bg-slate-50"
-                placeholder="Temp"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <div className="text-sm font-medium text-slate-600 mb-3">GPS Location (Auto-captured)</div>
+                <div className="space-y-2">
+                  <div className="bg-white rounded-lg p-3 border border-blue-100">
+                    <div className="text-xs text-slate-500">Latitude</div>
+                    <div className="text-sm font-semibold text-slate-800">{formData.gpsLatitude || 'Capturing...'}</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-blue-100">
+                    <div className="text-xs text-slate-500">Longitude</div>
+                    <div className="text-sm font-semibold text-slate-800">{formData.gpsLongitude || 'Capturing...'}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-sm font-medium text-slate-600 mb-3 flex items-center gap-2">
+                  <Cloud className="w-4 h-4 text-blue-600" />
+                  Weather Conditions (Auto-captured)
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-white rounded-lg p-3 border border-blue-100">
+                    <div className="text-xs text-blue-600 font-medium">Temperature</div>
+                    <div className="text-xl font-bold text-slate-800">{formData.temperature ? `${formData.temperature}°C` : '--'}</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-blue-100">
+                    <div className="text-xs text-blue-600 font-medium">Humidity</div>
+                    <div className="text-xl font-bold text-slate-800">{formData.humidity ? `${formData.humidity}%` : '--'}</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-blue-100">
+                    <div className="text-xs text-blue-600 font-medium">Conditions</div>
+                    <div className="text-sm font-semibold text-slate-800">{formData.weatherCondition || '--'}</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-blue-100">
+                    <div className="text-xs text-blue-600 font-medium">Wind</div>
+                    <div className="text-sm font-semibold text-slate-800">{formData.windSpeed ? `${formData.windSpeed} km/h` : '--'}</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
