@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Camera, MapPin, Cloud, Package, Droplet, Star, Upload, QrCode } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { useLocationCapture } from '../../hooks/useLocationCapture';
 
 interface TesterBatch {
   id: string;
@@ -13,6 +14,7 @@ interface TesterBatch {
 
 export default function ProcessorDashboard() {
   const { user } = useAuth();
+  const { location, weather } = useLocationCapture();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [testerBatches, setTesterBatches] = useState<TesterBatch[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
@@ -26,31 +28,11 @@ export default function ProcessorDashboard() {
     chemicalsAdditives: '',
     testerRating: 5,
     testerRatingNotes: '',
-    gpsLatitude: '',
-    gpsLongitude: '',
-    weatherCondition: '',
-    temperature: '',
-    humidity: '',
-    pressure: '',
-    windSpeed: '',
   });
 
   useEffect(() => {
     fetchTesterBatches();
-    requestLocationPermission();
   }, []);
-
-  const requestLocationPermission = () => {
-    if (navigator.geolocation) {
-      const confirmation = window.confirm(
-        'This application needs access to your location to capture GPS coordinates for batch tracking. Allow location access?'
-      );
-      if (confirmation) {
-        captureGPS();
-        captureWeather();
-      }
-    }
-  };
 
   useEffect(() => {
     if (formData.inputWeight && formData.outputWeight) {
@@ -75,49 +57,6 @@ export default function ProcessorDashboard() {
     }
   };
 
-  const captureGPS = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setFormData(prev => ({
-            ...prev,
-            gpsLatitude: position.coords.latitude.toFixed(6),
-            gpsLongitude: position.coords.longitude.toFixed(6),
-          }));
-        },
-        (error) => {
-          console.error('GPS error:', error);
-          alert('Unable to capture GPS location. Please enable location services and refresh the page.');
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        }
-      );
-    } else {
-      alert('Geolocation is not supported by your browser.');
-    }
-  };
-
-  const captureWeather = async () => {
-    const conditions = ['Clear', 'Partly Cloudy', 'Cloudy', 'Overcast', 'Light Rain', 'Sunny'];
-    const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
-    const randomTemp = Math.floor(Math.random() * 20) + 15;
-    const humidity = Math.floor(Math.random() * 40) + 40;
-    const pressure = Math.floor(Math.random() * 30) + 990;
-    const windSpeed = (Math.random() * 15 + 5).toFixed(1);
-
-    setFormData(prev => ({
-      ...prev,
-      weatherCondition: randomCondition,
-      temperature: randomTemp.toString(),
-      humidity: humidity.toString(),
-      pressure: pressure.toString(),
-      windSpeed: windSpeed,
-    }));
-  };
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setSelectedFiles(e.target.files);
@@ -138,10 +77,10 @@ export default function ProcessorDashboard() {
         .insert({
           tester_batch_id: formData.testerBatchId,
           processor_id: user.id,
-          gps_latitude: parseFloat(formData.gpsLatitude),
-          gps_longitude: parseFloat(formData.gpsLongitude),
-          weather_condition: formData.weatherCondition,
-          temperature: parseFloat(formData.temperature),
+          gps_latitude: parseFloat(location.latitude),
+          gps_longitude: parseFloat(location.longitude),
+          weather_condition: weather.condition,
+          temperature: parseFloat(weather.temperature),
           processing_type: formData.processingType,
           input_weight: parseFloat(formData.inputWeight),
           output_weight: parseFloat(formData.outputWeight),
@@ -192,17 +131,8 @@ export default function ProcessorDashboard() {
         chemicalsAdditives: '',
         testerRating: 5,
         testerRatingNotes: '',
-        gpsLatitude: '',
-        gpsLongitude: '',
-        weatherCondition: '',
-        temperature: '',
-        humidity: '',
-        pressure: '',
-        windSpeed: '',
       });
       setSelectedFiles(null);
-      captureGPS();
-      captureWeather();
     } catch (error) {
       console.error('Error submitting batch:', error);
       alert('Error submitting batch. Please try again.');
@@ -357,11 +287,11 @@ export default function ProcessorDashboard() {
                 <div className="space-y-2">
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-slate-500">Latitude</div>
-                    <div className="text-sm font-semibold text-slate-800">{formData.gpsLatitude || 'Capturing...'}</div>
+                    <div className="text-sm font-semibold text-slate-800">{location.latitude || 'Capturing...'}</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-slate-500">Longitude</div>
-                    <div className="text-sm font-semibold text-slate-800">{formData.gpsLongitude || 'Capturing...'}</div>
+                    <div className="text-sm font-semibold text-slate-800">{location.longitude || 'Capturing...'}</div>
                   </div>
                 </div>
               </div>
@@ -374,19 +304,19 @@ export default function ProcessorDashboard() {
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-blue-600 font-medium">Temperature</div>
-                    <div className="text-xl font-bold text-slate-800">{formData.temperature ? `${formData.temperature}°C` : '--'}</div>
+                    <div className="text-xl font-bold text-slate-800">{weather.temperature ? `${weather.temperature}°C` : '--'}</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-blue-600 font-medium">Humidity</div>
-                    <div className="text-xl font-bold text-slate-800">{formData.humidity ? `${formData.humidity}%` : '--'}</div>
+                    <div className="text-xl font-bold text-slate-800">{weather.humidity ? `${weather.humidity}%` : '--'}</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-blue-600 font-medium">Conditions</div>
-                    <div className="text-sm font-semibold text-slate-800">{formData.weatherCondition || '--'}</div>
+                    <div className="text-sm font-semibold text-slate-800">{weather.condition || '--'}</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-blue-600 font-medium">Wind</div>
-                    <div className="text-sm font-semibold text-slate-800">{formData.windSpeed ? `${formData.windSpeed} km/h` : '--'}</div>
+                    <div className="text-sm font-semibold text-slate-800">{weather.windSpeed ? `${weather.windSpeed} km/h` : '--'}</div>
                   </div>
                 </div>
               </div>

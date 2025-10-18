@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { QrCode, MapPin, CloudRain, Upload, Star, Beaker, AlertCircle, Camera } from 'lucide-react';
+import { useLocationCapture } from '../../hooks/useLocationCapture';
 
 interface CollectorBatch {
   id: string;
@@ -32,6 +33,7 @@ interface TesterFormData {
 
 export default function TesterDashboard() {
   const { user } = useAuth();
+  const { location, weather } = useLocationCapture();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -57,22 +59,6 @@ export default function TesterDashboard() {
     collectorRating: 5,
     collectorRatingNotes: '',
   });
-
-  useEffect(() => {
-    requestLocationPermission();
-  }, []);
-
-  const requestLocationPermission = () => {
-    if (navigator.geolocation) {
-      const confirmation = window.confirm(
-        'This application needs access to your location to capture GPS coordinates for batch tracking. Allow location access?'
-      );
-      if (confirmation) {
-        captureGPS();
-        captureWeather();
-      }
-    }
-  };
 
   const searchBatch = async () => {
     if (!batchSearchTerm.trim()) {
@@ -112,54 +98,6 @@ export default function TesterDashboard() {
     }
   };
 
-  const captureGPS = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setFormData(prev => ({
-            ...prev,
-            gpsLatitude: position.coords.latitude,
-            gpsLongitude: position.coords.longitude,
-          }));
-          setSuccess('GPS location captured successfully');
-        },
-        (error) => {
-          console.error('GPS error:', error);
-          setError('Unable to capture GPS location. Please enable location services and refresh the page.');
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        }
-      );
-    } else {
-      setError('Geolocation is not supported by your browser.');
-    }
-  };
-
-  const captureWeather = async () => {
-    try {
-      const conditions = ['Clear', 'Partly Cloudy', 'Cloudy', 'Overcast', 'Light Rain', 'Sunny'];
-      const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
-      const randomTemp = Math.floor(Math.random() * 20) + 15;
-      const humidity = Math.floor(Math.random() * 40) + 40;
-      const pressure = Math.floor(Math.random() * 30) + 990;
-      const windSpeed = (Math.random() * 15 + 5).toFixed(1);
-
-      setFormData(prev => ({
-        ...prev,
-        weatherCondition: randomCondition,
-        temperature: randomTemp,
-        humidity: humidity,
-        pressure: pressure,
-        windSpeed: parseFloat(windSpeed),
-      }));
-    } catch (error) {
-      console.error('Weather capture error:', error);
-    }
-  };
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setDocuments(Array.from(e.target.files));
@@ -186,10 +124,10 @@ export default function TesterDashboard() {
         .insert({
           collector_batch_id: formData.collectorBatchId,
           tester_id: user?.id,
-          gps_latitude: formData.gpsLatitude,
-          gps_longitude: formData.gpsLongitude,
-          weather_condition: formData.weatherCondition,
-          temperature: formData.temperature,
+          gps_latitude: parseFloat(location.latitude),
+          gps_longitude: parseFloat(location.longitude),
+          weather_condition: weather.condition,
+          temperature: parseFloat(weather.temperature),
           test_date: formData.testDate,
           quality_grade_score: parseFloat(formData.qualityGradeScore) || 0,
           contaminant_level: parseFloat(formData.contaminantLevel) || 0,
@@ -327,11 +265,11 @@ export default function TesterDashboard() {
                 <div className="space-y-2">
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-slate-500">Latitude</div>
-                    <div className="text-sm font-semibold text-slate-800">{formData.gpsLatitude?.toFixed(6) || 'Capturing...'}</div>
+                    <div className="text-sm font-semibold text-slate-800">{location.latitude || 'Capturing...'}</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-slate-500">Longitude</div>
-                    <div className="text-sm font-semibold text-slate-800">{formData.gpsLongitude?.toFixed(6) || 'Capturing...'}</div>
+                    <div className="text-sm font-semibold text-slate-800">{location.longitude || 'Capturing...'}</div>
                   </div>
                 </div>
               </div>
@@ -344,19 +282,19 @@ export default function TesterDashboard() {
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-blue-600 font-medium">Temperature</div>
-                    <div className="text-xl font-bold text-slate-800">{formData.temperature ? `${formData.temperature}°C` : '--'}</div>
+                    <div className="text-xl font-bold text-slate-800">{weather.temperature ? `${weather.temperature}°C` : '--'}</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-blue-600 font-medium">Humidity</div>
-                    <div className="text-xl font-bold text-slate-800">{formData.humidity ? `${formData.humidity}%` : '--'}</div>
+                    <div className="text-xl font-bold text-slate-800">{weather.humidity ? `${weather.humidity}%` : '--'}</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-blue-600 font-medium">Conditions</div>
-                    <div className="text-sm font-semibold text-slate-800">{formData.weatherCondition || '--'}</div>
+                    <div className="text-sm font-semibold text-slate-800">{weather.condition || '--'}</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-blue-600 font-medium">Wind</div>
-                    <div className="text-sm font-semibold text-slate-800">{formData.windSpeed ? `${formData.windSpeed} km/h` : '--'}</div>
+                    <div className="text-sm font-semibold text-slate-800">{weather.windSpeed ? `${weather.windSpeed} km/h` : '--'}</div>
                   </div>
                 </div>
               </div>

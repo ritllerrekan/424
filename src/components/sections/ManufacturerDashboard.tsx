@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Camera, MapPin, Cloud, Package, Calendar, Star, Upload, QrCode } from 'lucide-react';
+import { Camera, MapPin, Cloud, Package, Calendar, Star, Upload, QrCode, Building2, Hash, Ruler } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { useLocationCapture } from '../../hooks/useLocationCapture';
 
 interface ProcessorBatch {
   id: string;
@@ -13,6 +14,7 @@ interface ProcessorBatch {
 
 export default function ManufacturerDashboard() {
   const { user } = useAuth();
+  const { location, weather } = useLocationCapture();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [processorBatches, setProcessorBatches] = useState<ProcessorBatch[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
@@ -20,35 +22,20 @@ export default function ManufacturerDashboard() {
   const [formData, setFormData] = useState({
     processorBatchId: '',
     productName: '',
+    brandName: '',
+    productType: '',
+    quantity: '',
+    unit: 'kg',
+    location: '',
     manufactureDate: new Date().toISOString().split('T')[0],
     expiryDate: '',
     processorRating: 5,
     processorRatingNotes: '',
-    gpsLatitude: '',
-    gpsLongitude: '',
-    weatherCondition: '',
-    temperature: '',
-    humidity: '',
-    pressure: '',
-    windSpeed: '',
   });
 
   useEffect(() => {
     fetchProcessorBatches();
-    requestLocationPermission();
   }, []);
-
-  const requestLocationPermission = () => {
-    if (navigator.geolocation) {
-      const confirmation = window.confirm(
-        'This application needs access to your location to capture GPS coordinates for batch tracking. Allow location access?'
-      );
-      if (confirmation) {
-        captureGPS();
-        captureWeather();
-      }
-    }
-  };
 
   const fetchProcessorBatches = async () => {
     const { data, error } = await supabase
@@ -60,49 +47,6 @@ export default function ManufacturerDashboard() {
     if (!error && data) {
       setProcessorBatches(data);
     }
-  };
-
-  const captureGPS = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setFormData(prev => ({
-            ...prev,
-            gpsLatitude: position.coords.latitude.toFixed(6),
-            gpsLongitude: position.coords.longitude.toFixed(6),
-          }));
-        },
-        (error) => {
-          console.error('GPS error:', error);
-          alert('Unable to capture GPS location. Please enable location services and refresh the page.');
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        }
-      );
-    } else {
-      alert('Geolocation is not supported by your browser.');
-    }
-  };
-
-  const captureWeather = async () => {
-    const conditions = ['Clear', 'Partly Cloudy', 'Cloudy', 'Overcast', 'Light Rain', 'Sunny'];
-    const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
-    const randomTemp = Math.floor(Math.random() * 20) + 15;
-    const humidity = Math.floor(Math.random() * 40) + 40;
-    const pressure = Math.floor(Math.random() * 30) + 990;
-    const windSpeed = (Math.random() * 15 + 5).toFixed(1);
-
-    setFormData(prev => ({
-      ...prev,
-      weatherCondition: randomCondition,
-      temperature: randomTemp.toString(),
-      humidity: humidity.toString(),
-      pressure: pressure.toString(),
-      windSpeed: windSpeed,
-    }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,11 +69,16 @@ export default function ManufacturerDashboard() {
         .insert({
           processor_batch_id: formData.processorBatchId,
           manufacturer_id: user.id,
-          gps_latitude: parseFloat(formData.gpsLatitude),
-          gps_longitude: parseFloat(formData.gpsLongitude),
-          weather_condition: formData.weatherCondition,
-          temperature: parseFloat(formData.temperature),
+          gps_latitude: parseFloat(location.latitude),
+          gps_longitude: parseFloat(location.longitude),
+          weather_condition: weather.condition,
+          temperature: parseFloat(weather.temperature),
           product_name: formData.productName,
+          brand_name: formData.brandName || null,
+          product_type: formData.productType || null,
+          quantity: formData.quantity ? parseFloat(formData.quantity) : null,
+          unit: formData.unit || null,
+          location: formData.location || null,
           manufacture_date: formData.manufactureDate,
           expiry_date: formData.expiryDate,
           processor_rating: formData.processorRating,
@@ -171,21 +120,17 @@ export default function ManufacturerDashboard() {
       setFormData({
         processorBatchId: '',
         productName: '',
+        brandName: '',
+        productType: '',
+        quantity: '',
+        unit: 'kg',
+        location: '',
         manufactureDate: new Date().toISOString().split('T')[0],
         expiryDate: '',
         processorRating: 5,
         processorRatingNotes: '',
-        gpsLatitude: '',
-        gpsLongitude: '',
-        weatherCondition: '',
-        temperature: '',
-        humidity: '',
-        pressure: '',
-        windSpeed: '',
       });
       setSelectedFiles(null);
-      captureGPS();
-      captureWeather();
     } catch (error) {
       console.error('Error submitting batch:', error);
       alert('Error submitting batch. Please try again.');
@@ -265,6 +210,89 @@ export default function ManufacturerDashboard() {
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+              <Star className="w-4 h-4" />
+              Brand Name
+            </label>
+            <input
+              type="text"
+              value={formData.brandName}
+              onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              placeholder="e.g., EcoGreen, NutriFeed, etc."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+              <Package className="w-4 h-4" />
+              Product Type
+            </label>
+            <select
+              value={formData.productType}
+              onChange={(e) => setFormData({ ...formData, productType: e.target.value })}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            >
+              <option value="">Select product type</option>
+              <option value="Fertilizer">Fertilizer</option>
+              <option value="Animal Feed">Animal Feed</option>
+              <option value="Compost">Compost</option>
+              <option value="Biofuel">Biofuel</option>
+              <option value="Biogas">Biogas</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+              <Hash className="w-4 h-4" />
+              Quantity
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.quantity}
+              onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              placeholder="0.00"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+              <Ruler className="w-4 h-4" />
+              Unit
+            </label>
+            <select
+              value={formData.unit}
+              onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            >
+              <option value="kg">Kilograms (kg)</option>
+              <option value="liters">Liters (L)</option>
+              <option value="pieces">Pieces</option>
+              <option value="tons">Tons</option>
+              <option value="bags">Bags</option>
+              <option value="boxes">Boxes</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+              <Building2 className="w-4 h-4" />
+              Manufacturing Location
+            </label>
+            <input
+              type="text"
+              value={formData.location}
+              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              placeholder="e.g., Factory Building, Warehouse, etc."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               Manufacture Date <span className="text-red-500">*</span>
             </label>
@@ -304,11 +332,11 @@ export default function ManufacturerDashboard() {
                 <div className="space-y-2">
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-slate-500">Latitude</div>
-                    <div className="text-sm font-semibold text-slate-800">{formData.gpsLatitude || 'Capturing...'}</div>
+                    <div className="text-sm font-semibold text-slate-800">{location.latitude || 'Capturing...'}</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-slate-500">Longitude</div>
-                    <div className="text-sm font-semibold text-slate-800">{formData.gpsLongitude || 'Capturing...'}</div>
+                    <div className="text-sm font-semibold text-slate-800">{location.longitude || 'Capturing...'}</div>
                   </div>
                 </div>
               </div>
@@ -321,19 +349,19 @@ export default function ManufacturerDashboard() {
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-blue-600 font-medium">Temperature</div>
-                    <div className="text-xl font-bold text-slate-800">{formData.temperature ? `${formData.temperature}°C` : '--'}</div>
+                    <div className="text-xl font-bold text-slate-800">{weather.temperature ? `${weather.temperature}°C` : '--'}</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-blue-600 font-medium">Humidity</div>
-                    <div className="text-xl font-bold text-slate-800">{formData.humidity ? `${formData.humidity}%` : '--'}</div>
+                    <div className="text-xl font-bold text-slate-800">{weather.humidity ? `${weather.humidity}%` : '--'}</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-blue-600 font-medium">Conditions</div>
-                    <div className="text-sm font-semibold text-slate-800">{formData.weatherCondition || '--'}</div>
+                    <div className="text-sm font-semibold text-slate-800">{weather.condition || '--'}</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-blue-600 font-medium">Wind</div>
-                    <div className="text-sm font-semibold text-slate-800">{formData.windSpeed ? `${formData.windSpeed} km/h` : '--'}</div>
+                    <div className="text-sm font-semibold text-slate-800">{weather.windSpeed ? `${weather.windSpeed} km/h` : '--'}</div>
                   </div>
                 </div>
               </div>
