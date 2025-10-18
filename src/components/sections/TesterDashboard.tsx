@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { QrCode, MapPin, CloudRain, Upload, Star, Beaker, AlertCircle, Camera } from 'lucide-react';
@@ -112,13 +112,22 @@ export default function TesterDashboard() {
       return;
     }
 
-    if (!location.latitude || !location.longitude) {
+    if (!location.latitude || !location.longitude || location.latitude === '' || location.longitude === '') {
       setError('Please wait for GPS location to be captured');
       return;
     }
 
-    if (!weather.temperature || !weather.condition) {
+    if (!weather.temperature || !weather.condition || weather.temperature === '' || weather.condition === '') {
       setError('Please wait for weather data to be captured');
+      return;
+    }
+
+    const lat = parseFloat(location.latitude);
+    const lng = parseFloat(location.longitude);
+    const temp = parseFloat(weather.temperature);
+
+    if (isNaN(lat) || isNaN(lng) || isNaN(temp)) {
+      setError('Invalid location or weather data. Please wait for data to be captured.');
       return;
     }
 
@@ -134,10 +143,10 @@ export default function TesterDashboard() {
         .insert({
           collector_batch_id: formData.collectorBatchId,
           tester_id: user?.id,
-          gps_latitude: parseFloat(location.latitude),
-          gps_longitude: parseFloat(location.longitude),
+          gps_latitude: lat,
+          gps_longitude: lng,
           weather_condition: weather.condition,
-          temperature: parseFloat(weather.temperature),
+          temperature: temp,
           test_date: formData.testDate,
           quality_grade_score: parseFloat(formData.qualityGradeScore) || 0,
           contaminant_level: parseFloat(formData.contaminantLevel) || 0,

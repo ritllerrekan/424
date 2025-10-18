@@ -67,13 +67,22 @@ export default function ProcessorDashboard() {
     e.preventDefault();
     if (!user) return;
 
-    if (!location.latitude || !location.longitude) {
+    if (!location.latitude || !location.longitude || location.latitude === '' || location.longitude === '') {
       alert('Please wait for GPS location to be captured');
       return;
     }
 
-    if (!weather.temperature || !weather.condition) {
+    if (!weather.temperature || !weather.condition || weather.temperature === '' || weather.condition === '') {
       alert('Please wait for weather data to be captured');
+      return;
+    }
+
+    const lat = parseFloat(location.latitude);
+    const lng = parseFloat(location.longitude);
+    const temp = parseFloat(weather.temperature);
+
+    if (isNaN(lat) || isNaN(lng) || isNaN(temp)) {
+      alert('Invalid location or weather data. Please wait for data to be captured.');
       return;
     }
 
@@ -87,10 +96,10 @@ export default function ProcessorDashboard() {
         .insert({
           tester_batch_id: formData.testerBatchId,
           processor_id: user.id,
-          gps_latitude: parseFloat(location.latitude),
-          gps_longitude: parseFloat(location.longitude),
+          gps_latitude: lat,
+          gps_longitude: lng,
           weather_condition: weather.condition,
-          temperature: parseFloat(weather.temperature),
+          temperature: temp,
           processing_type: formData.processingType,
           input_weight: parseFloat(formData.inputWeight),
           output_weight: parseFloat(formData.outputWeight),
