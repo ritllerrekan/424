@@ -13,6 +13,7 @@
   "dependencies": {
     "@biconomy/account": "^4.5.2",
     "@biconomy/mexa": "^2.0.38",
+    "@pinata/sdk": "^2.1.0",
     "@supabase/supabase-js": "^2.57.4",
     "@web3auth/base": "^8.12.4",
     "@web3auth/ethereum-provider": "^8.12.4",
