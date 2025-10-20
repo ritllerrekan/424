@@ -1,14 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Web3AuthProvider, useWeb3Auth } from './contexts/Web3AuthContext';
 import { BiconomyProvider } from './contexts/BiconomyContext';
 import { AppStateProvider } from './contexts/AppStateContext';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { Dashboard } from './pages/Dashboard';
+import { PublicBatchTracker } from './pages/PublicBatchTracker';
 
 function AppContent() {
   const { userProfile, loading } = useWeb3Auth();
   const [showLogin, setShowLogin] = useState(false);
+  const [isPublicRoute, setIsPublicRoute] = useState(false);
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    setIsPublicRoute(path === '/track' || path.startsWith('/track/'));
+  }, []);
+
+  if (isPublicRoute) {
+    return <PublicBatchTracker />;
+  }
 
   if (loading) {
     return (
