@@ -1,4 +1,4 @@
-import { User, Package, CheckCircle, Bot, Trash2, Receipt, LogOut } from 'lucide-react';
+import { User, Package, CheckCircle, Bot, Trash2, Receipt, LogOut, Zap } from 'lucide-react';
 import { useWeb3Auth } from '../contexts/Web3AuthContext';
 
 interface SidebarProps {
@@ -11,6 +11,7 @@ export const Sidebar = ({ activeSection, onSectionChange }: SidebarProps) => {
 
   const menuItems = [
     { id: 'profile', label: 'Profile', icon: User },
+    { id: 'smart-account', label: 'Smart Account', icon: Zap },
     { id: 'role-dashboard', label: getRoleLabel(userProfile?.role), icon: Package },
     { id: 'active-batches', label: 'Active Batches', icon: Package },
     { id: 'completed-batches', label: 'Completed Batches', icon: CheckCircle },

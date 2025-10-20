@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { ProfileSection } from '../components/sections/ProfileSection';
+import { SmartAccountSection } from '../components/sections/SmartAccountSection';
 import { RoleDashboard } from '../components/sections/RoleDashboard';
 import { ActiveBatches } from '../components/sections/ActiveBatches';
 import { CompletedBatches } from '../components/sections/CompletedBatches';
@@ -15,6 +16,8 @@ export const Dashboard = () => {
     switch (activeSection) {
       case 'profile':
         return <ProfileSection />;
+      case 'smart-account':
+        return <SmartAccountSection />;
       case 'role-dashboard':
         return <RoleDashboard />;
       case 'active-batches':
