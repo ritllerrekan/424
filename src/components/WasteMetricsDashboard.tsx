@@ -7,7 +7,9 @@ import {
   BarChart3,
   AlertTriangle,
   Lightbulb,
-  Package
+  Package,
+  Download,
+  FileText
 } from 'lucide-react';
 import {
   LineChart,
@@ -16,6 +18,8 @@ import {
   Bar,
   PieChart,
   Pie,
+  AreaChart,
+  Area,
   Cell,
   XAxis,
   YAxis,
@@ -27,6 +31,7 @@ import {
 import { WasteMetric, WastePhase, WasteCategory, WASTE_CATEGORIES } from '../types/waste';
 import { calculateWasteSummary } from '../services/wasteService';
 import { useWeb3Auth } from '../contexts/Web3AuthContext';
+import { exportWasteMetricsToCSV, exportChartDataToCSV, exportToPDF } from '../utils/exportUtils';
 
 interface WasteMetricsDashboardProps {
   wasteMetrics: WasteMetric[];
@@ -78,6 +83,22 @@ export function WasteMetricsDashboard({ wasteMetrics, onRecordWaste }: WasteMetr
   const totalCost = filteredMetrics.reduce((sum, m) => sum + parseFloat(m.cost_impact.toString()), 0);
   const avgWastePerIncident = filteredMetrics.length > 0 ? totalWaste / filteredMetrics.length : 0;
 
+  const sortedMetrics = [...filteredMetrics].sort((a, b) =>
+    new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
+  );
+
+  const firstMonthWaste = sortedMetrics
+    .filter((_, idx) => idx < Math.ceil(sortedMetrics.length / 3))
+    .reduce((sum, m) => sum + parseFloat(m.waste_quantity.toString()), 0);
+
+  const lastMonthWaste = sortedMetrics
+    .filter((_, idx) => idx >= Math.floor(sortedMetrics.length * 2 / 3))
+    .reduce((sum, m) => sum + parseFloat(m.waste_quantity.toString()), 0);
+
+  const wasteReduction = firstMonthWaste > 0
+    ? ((firstMonthWaste - lastMonthWaste) / firstMonthWaste) * 100
+    : 0;
+
   const wasteByCategory = WASTE_CATEGORIES.map(cat => ({
     name: cat.label,
     value: filteredMetrics
@@ -113,6 +134,24 @@ export function WasteMetricsDashboard({ wasteMetrics, onRecordWaste }: WasteMetr
     return acc;
   }, [] as Array<{ date: string; waste: number; cost: number }>).slice(-14);
 
+  const cumulativeWaste = sortedMetrics.reduce((acc, metric, index) => {
+    const date = new Date(metric.recorded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const wasteQty = parseFloat(metric.waste_quantity.toString());
+    const prevCumulative = index > 0 ? acc[acc.length - 1].cumulative : 0;
+
+    const existing = acc.find(item => item.date === date);
+    if (existing) {
+      existing.cumulative += wasteQty;
+    } else {
+      acc.push({
+        date,
+        cumulative: prevCumulative + wasteQty
+      });
+    }
+
+    return acc;
+  }, [] as Array<{ date: string; cumulative: number }>).slice(-14);
+
   const topRecommendations = filteredMetrics
     .filter(m => m.prevention_notes)
     .slice(0, 5);
@@ -120,6 +159,39 @@ export function WasteMetricsDashboard({ wasteMetrics, onRecordWaste }: WasteMetr
   const getCategoryLabel = (category: string) => {
     const cat = WASTE_CATEGORIES.find(c => c.value === category);
     return cat ? cat.label : category;
+  };
+
+  const handleExportCSV = () => {
+    exportWasteMetricsToCSV(filteredMetrics, `waste-metrics-${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const handleExportChartData = () => {
+    const chartDataForExport = [
+      ...wasteTrends.map(d => ({ type: 'Trend', ...d })),
+      ...wasteByCategory.map(d => ({ type: 'Category', ...d })),
+      ...wasteByPhase.map(d => ({ type: 'Phase', ...d }))
+    ];
+
+    exportChartDataToCSV(
+      chartDataForExport,
+      `chart-data-${new Date().toISOString().split('T')[0]}.csv`,
+      [
+        { key: 'type', label: 'Type' },
+        { key: 'date', label: 'Date' },
+        { key: 'name', label: 'Name' },
+        { key: 'waste', label: 'Waste' },
+        { key: 'cost', label: 'Cost' },
+        { key: 'value', label: 'Value' }
+      ]
+    );
+  };
+
+  const handleExportPDF = () => {
+    exportToPDF(filteredMetrics, summary, {
+      wasteTrends,
+      wasteByCategory,
+      wasteByPhase
+    });
   };
 
   return (
@@ -135,17 +207,42 @@ export function WasteMetricsDashboard({ wasteMetrics, onRecordWaste }: WasteMetr
               <p className="text-sm text-gray-600">Track, analyze, and reduce waste across your supply chain</p>
             </div>
           </div>
-          {onRecordWaste && (
-            <button
-              onClick={onRecordWaste}
-              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              Record Waste
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mr-4">
+              <button
+                onClick={handleExportCSV}
+                className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all shadow-sm hover:shadow"
+                title="Export Metrics to CSV"
+              >
+                <Download className="w-5 h-5 text-gray-600" />
+              </button>
+              <button
+                onClick={handleExportChartData}
+                className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all shadow-sm hover:shadow"
+                title="Export Chart Data to CSV"
+              >
+                <BarChart3 className="w-5 h-5 text-gray-600" />
+              </button>
+              <button
+                onClick={handleExportPDF}
+                className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all shadow-sm hover:shadow"
+                title="Export Report to PDF"
+              >
+                <FileText className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            {onRecordWaste && (
+              <button
+                onClick={onRecordWaste}
+                className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                Record Waste
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <div className="backdrop-blur-md bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl p-4 border border-emerald-200/50 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-emerald-700">Total Waste</span>
@@ -180,6 +277,23 @@ export function WasteMetricsDashboard({ wasteMetrics, onRecordWaste }: WasteMetr
             </div>
             <p className="text-2xl font-bold text-gray-800">{avgWastePerIncident.toFixed(2)}</p>
             <p className="text-xs text-gray-600 mt-1">kg per event</p>
+          </div>
+
+          <div className={`backdrop-blur-md bg-gradient-to-br rounded-xl p-4 border shadow-sm ${
+            wasteReduction > 0
+              ? 'from-teal-50 to-teal-100/50 border-teal-200/50'
+              : 'from-orange-50 to-orange-100/50 border-orange-200/50'
+          }`}>
+            <div className="flex items-center justify-between mb-2">
+              <span className={`text-sm font-medium ${wasteReduction > 0 ? 'text-teal-700' : 'text-orange-700'}`}>
+                Waste Reduction
+              </span>
+              <TrendingDown className={`w-5 h-5 ${wasteReduction > 0 ? 'text-teal-600' : 'text-orange-600'}`} />
+            </div>
+            <p className={`text-2xl font-bold ${wasteReduction > 0 ? 'text-teal-600' : 'text-orange-600'}`}>
+              {wasteReduction > 0 ? '+' : ''}{wasteReduction.toFixed(1)}%
+            </p>
+            <p className="text-xs text-gray-600 mt-1">vs earlier period</p>
           </div>
         </div>
 
@@ -329,6 +443,43 @@ export function WasteMetricsDashboard({ wasteMetrics, onRecordWaste }: WasteMetr
                 <Bar yAxisId="left" dataKey="waste" fill="#10b981" name="Waste (kg)" radius={[8, 8, 0, 0]} />
                 <Bar yAxisId="right" dataKey="cost" fill="#ef4444" name="Cost ($)" radius={[8, 8, 0, 0]} />
               </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="backdrop-blur-lg bg-white/70 rounded-2xl shadow-xl border border-white/20 p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <TrendingDown className="w-5 h-5 text-emerald-600" />
+              Cumulative Waste Over Time
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={cumulativeWaste}>
+                <defs>
+                  <linearGradient id="colorCumulative" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    backdropFilter: 'blur(10px)'
+                  }}
+                  formatter={(value: number) => [`${value.toFixed(2)} kg`, 'Cumulative Waste']}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="cumulative"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#colorCumulative)"
+                />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
 

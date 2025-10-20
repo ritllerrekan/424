@@ -199,6 +199,24 @@ export async function calculateWasteSummary(userId: string) {
   }
 }
 
+export async function getUniqueBatchIds(userId: string): Promise<string[]> {
+  try {
+    const { data, error } = await supabase
+      .from('waste_metrics')
+      .select('batch_id')
+      .eq('recorded_by', userId)
+      .order('recorded_at', { ascending: false });
+
+    if (error) throw error;
+
+    const uniqueBatchIds = Array.from(new Set(data.map(item => item.batch_id)));
+    return uniqueBatchIds;
+  } catch (error) {
+    console.error('Error fetching unique batch IDs:', error);
+    throw error;
+  }
+}
+
 function extractRecommendations(preventionNotes: string): string[] {
   const recommendations: string[] = [];
 

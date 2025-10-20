@@ -4,8 +4,9 @@ import { Package, LogOut, Plus, List, TrendingDown } from 'lucide-react';
 import { WasteMetricForm } from '../components/WasteMetricForm';
 import { WasteMetricsList } from '../components/WasteMetricsList';
 import { WasteMetricsDashboard } from '../components/WasteMetricsDashboard';
+import { BatchComparisonChart } from '../components/BatchComparisonChart';
 import { WasteMetric, WastePhase } from '../types/waste';
-import { recordWasteMetric } from '../services/wasteService';
+import { recordWasteMetric, getUniqueBatchIds } from '../services/wasteService';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -19,6 +20,7 @@ export function Dashboard() {
   const [showWasteForm, setShowWasteForm] = useState(false);
   const [wasteMetrics, setWasteMetrics] = useState<WasteMetric[]>([]);
   const [isLoadingWaste, setIsLoadingWaste] = useState(false);
+  const [batchIds, setBatchIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (userId) {
@@ -38,6 +40,9 @@ export function Dashboard() {
 
       if (error) throw error;
       setWasteMetrics(data as WasteMetric[]);
+
+      const uniqueBatchIds = await getUniqueBatchIds(userId);
+      setBatchIds(uniqueBatchIds);
     } catch (error) {
       console.error('Error loading waste metrics:', error);
     } finally {
@@ -168,10 +173,15 @@ export function Dashboard() {
               onCancel={() => setShowWasteForm(false)}
             />
           ) : (
-            <WasteMetricsDashboard
-              wasteMetrics={wasteMetrics}
-              onRecordWaste={() => setShowWasteForm(true)}
-            />
+            <div className="space-y-6">
+              <WasteMetricsDashboard
+                wasteMetrics={wasteMetrics}
+                onRecordWaste={() => setShowWasteForm(true)}
+              />
+              {batchIds.length > 1 && (
+                <BatchComparisonChart batchIds={batchIds} />
+              )}
+            </div>
           )
         ) : (
           <div className="bg-white rounded-lg shadow-md p-8">
