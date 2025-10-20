@@ -16,6 +16,7 @@ interface Web3AuthContextType {
   user: any;
   userProfile: UserProfile | null;
   walletAddress: string;
+  userId: string;
   loading: boolean;
   login: () => Promise<void>;
   logout: () => Promise<void>;
@@ -159,6 +160,7 @@ export function Web3AuthProvider({ children }: { children: ReactNode }) {
         user,
         userProfile,
         walletAddress,
+        userId: walletAddress,
         loading,
         login,
         logout,

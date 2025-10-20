@@ -1,16 +1,67 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWeb3Auth } from '../contexts/Web3AuthContext';
-import { Package, LogOut, Plus, List } from 'lucide-react';
+import { Package, LogOut, Plus, List, TrendingDown } from 'lucide-react';
+import { WasteMetricForm } from '../components/WasteMetricForm';
+import { WasteMetricsList } from '../components/WasteMetricsList';
+import { WasteMetricsDashboard } from '../components/WasteMetricsDashboard';
+import { WasteMetric, WastePhase } from '../types/waste';
+import { recordWasteMetric } from '../services/wasteService';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 export function Dashboard() {
-  const { userProfile, logout, walletAddress } = useWeb3Auth();
-  const [activeTab, setActiveTab] = useState<'create' | 'view'>('view');
+  const { userProfile, logout, walletAddress, userId } = useWeb3Auth();
+  const [activeTab, setActiveTab] = useState<'view' | 'create' | 'waste'>('view');
+  const [showWasteForm, setShowWasteForm] = useState(false);
+  const [wasteMetrics, setWasteMetrics] = useState<WasteMetric[]>([]);
+  const [isLoadingWaste, setIsLoadingWaste] = useState(false);
+
+  useEffect(() => {
+    if (userId) {
+      loadUserWasteMetrics();
+    }
+  }, [userId]);
+
+  const loadUserWasteMetrics = async () => {
+    if (!userId) return;
+    try {
+      setIsLoadingWaste(true);
+      const { data, error } = await supabase
+        .from('waste_metrics')
+        .select('*')
+        .eq('recorded_by', userId)
+        .order('recorded_at', { ascending: false });
+
+      if (error) throw error;
+      setWasteMetrics(data as WasteMetric[]);
+    } catch (error) {
+      console.error('Error loading waste metrics:', error);
+    } finally {
+      setIsLoadingWaste(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
       await logout();
     } catch (error) {
       console.error('Logout failed:', error);
+    }
+  };
+
+  const handleRecordWaste = async (wasteData: any) => {
+    if (!userId) return;
+    try {
+      await recordWasteMetric(wasteData, userId);
+      setShowWasteForm(false);
+      await loadUserWasteMetrics();
+    } catch (error) {
+      console.error('Error recording waste:', error);
+      throw error;
     }
   };
 
@@ -93,29 +144,58 @@ export function Dashboard() {
             <Plus className="w-5 h-5" />
             Create Batch
           </button>
+          <button
+            onClick={() => setActiveTab('waste')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'waste'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+            }`}
+          >
+            <TrendingDown className="w-5 h-5" />
+            Waste Metrics
+          </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-8">
-          {activeTab === 'view' ? (
-            <div className="text-center py-12">
-              <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">No Batches Yet</h3>
-              <p className="text-gray-600 mb-6">Get started by creating your first batch</p>
-              <button
-                onClick={() => setActiveTab('create')}
-                className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-              >
-                Create Batch
-              </button>
-            </div>
+        {activeTab === 'waste' ? (
+          showWasteForm ? (
+            <WasteMetricForm
+              batchId="demo-batch-id"
+              phase={userProfile?.role === 'collector' ? 'collection' :
+                     userProfile?.role === 'tester' ? 'testing' :
+                     userProfile?.role === 'processor' ? 'processing' : 'manufacturing'}
+              onSubmit={handleRecordWaste}
+              onCancel={() => setShowWasteForm(false)}
+            />
           ) : (
-            <div className="text-center py-12">
-              <Plus className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Create New Batch</h3>
-              <p className="text-gray-600 mb-6">Batch creation form coming soon</p>
-            </div>
-          )}
-        </div>
+            <WasteMetricsDashboard
+              wasteMetrics={wasteMetrics}
+              onRecordWaste={() => setShowWasteForm(true)}
+            />
+          )
+        ) : (
+          <div className="bg-white rounded-lg shadow-md p-8">
+            {activeTab === 'view' ? (
+              <div className="text-center py-12">
+                <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">No Batches Yet</h3>
+                <p className="text-gray-600 mb-6">Get started by creating your first batch</p>
+                <button
+                  onClick={() => setActiveTab('create')}
+                  className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                >
+                  Create Batch
+                </button>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Plus className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Create New Batch</h3>
+                <p className="text-gray-600 mb-6">Batch creation form coming soon</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
