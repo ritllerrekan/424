@@ -3,7 +3,7 @@ import { Web3AuthProvider, useWeb3Auth } from './contexts/Web3AuthContext';
 import { BiconomyProvider } from './contexts/BiconomyContext';
 import { AppStateProvider } from './contexts/AppStateContext';
 import { LandingPage } from './pages/LandingPage';
-import { Web3LoginPage } from './pages/Web3LoginPage';
+import { LoginPage } from './pages/LoginPage';
 import { Dashboard } from './pages/Dashboard';
 
 function AppContent() {
@@ -23,7 +23,7 @@ function AppContent() {
   }
 
   if (showLogin || (userProfile && !userProfile.organization)) {
-    return <Web3LoginPage onBack={() => setShowLogin(false)} />;
+    return <LoginPage onBack={() => setShowLogin(false)} />;
   }
 
   return <LandingPage onGetStarted={() => setShowLogin(true)} />;
