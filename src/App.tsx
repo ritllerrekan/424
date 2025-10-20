@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Web3AuthProvider, useWeb3Auth } from './contexts/Web3AuthContext';
 import { BiconomyProvider } from './contexts/BiconomyContext';
+import { AppStateProvider } from './contexts/AppStateContext';
 import { LandingPage } from './pages/LandingPage';
 import { Web3LoginPage } from './pages/Web3LoginPage';
 import { Dashboard } from './pages/Dashboard';
@@ -30,11 +31,13 @@ function AppContent() {
 
 function App() {
   return (
-    <Web3AuthProvider>
-      <BiconomyProvider>
-        <AppContent />
-      </BiconomyProvider>
-    </Web3AuthProvider>
+    <AppStateProvider>
+      <Web3AuthProvider>
+        <BiconomyProvider>
+          <AppContent />
+        </BiconomyProvider>
+      </Web3AuthProvider>
+    </AppStateProvider>
   );
 }
 
