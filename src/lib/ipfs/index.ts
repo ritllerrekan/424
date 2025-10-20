@@ -5,6 +5,8 @@ export * from './retry';
 export * from './pinata';
 export * from './batch';
 export * from './profile';
+export * from './schemas';
+export * from './metadata';
 
 export { ipfsCache } from './cache';
 export {
@@ -34,3 +36,28 @@ export {
   retrieveUserProfile,
   retrieveProfileWithAssets,
 } from './profile';
+
+export {
+  MetadataManager,
+  MetadataBuilder,
+  MetadataValidator,
+  MetadataVersionManager,
+  MetadataParser,
+  MetadataSearch,
+} from './metadata';
+
+export type {
+  AnyMetadata,
+  CollectorBatchMetadata,
+  TesterBatchMetadata,
+  ProcessorBatchMetadata,
+  ManufacturerBatchMetadata,
+  WasteMetricsMetadata,
+  QualityReportMetadata,
+  MetadataSearchQuery,
+  ValidationResult,
+  ParsedMetadata,
+  SearchResult,
+  SearchOptions,
+  VersionedMetadata,
+} from './metadata';
