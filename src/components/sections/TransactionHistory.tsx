@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Receipt, CheckCircle, Clock, XCircle, ExternalLink } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useWeb3Auth } from '../../contexts/Web3AuthContext';
 import { supabase, Transaction } from '../../lib/supabase';
 
 export const TransactionHistory = () => {
-  const { userProfile } = useAuth();
+  const { userProfile } = useWeb3Auth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 

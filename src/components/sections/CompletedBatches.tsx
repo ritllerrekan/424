@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, Package, Calendar } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useWeb3Auth } from '../../contexts/Web3AuthContext';
 import { supabase, Batch } from '../../lib/supabase';
 
 export const CompletedBatches = () => {
-  const { userProfile } = useAuth();
+  const { userProfile } = useWeb3Auth();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
 

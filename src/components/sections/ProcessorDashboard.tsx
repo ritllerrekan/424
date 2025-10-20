@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Camera, MapPin, Cloud, Package, Droplet, Star, Upload, QrCode } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useWeb3Auth } from '../../contexts/Web3AuthContext';
 import { supabase } from '../../lib/supabase';
 import { useLocationCapture } from '../../hooks/useLocationCapture';
 

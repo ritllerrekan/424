@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Cloud, Calendar, Package, Droplet, DollarSign, Weight, FileText, Download, CheckCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
+import { useWeb3Auth } from '../../contexts/Web3AuthContext';
 
 interface LocationData {
   latitude: number | null;

@@ -1,11 +1,11 @@
-import { useAuth } from '../../contexts/AuthContext';
+import { useWeb3Auth } from '../../contexts/Web3AuthContext';
 import CollectorDashboard from './CollectorDashboard';
 import TesterDashboard from './TesterDashboard';
 import ProcessorDashboard from './ProcessorDashboard';
 import ManufacturerDashboard from './ManufacturerDashboard';
 
 export const RoleDashboard = () => {
-  const { userProfile } = useAuth();
+  const { userProfile } = useWeb3Auth();
 
   if (userProfile?.role === 'collector') {
     return <CollectorDashboard />;

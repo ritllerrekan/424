@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Trash2, TrendingDown, DollarSign, Calendar } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useWeb3Auth } from '../../contexts/Web3AuthContext';
 import { supabase, WasteMetric } from '../../lib/supabase';
 
 export const WasteMetrics = () => {
-  const { userProfile } = useAuth();
+  const { userProfile } = useWeb3Auth();
   const [metrics, setMetrics] = useState<WasteMetric[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalWaste, setTotalWaste] = useState(0);

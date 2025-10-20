@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { Web3AuthProvider, useWeb3Auth } from './contexts/Web3AuthContext';
 import { LandingPage } from './pages/LandingPage';
-import { LoginPage } from './pages/LoginPage';
+import { Web3LoginPage } from './pages/Web3LoginPage';
 import { Dashboard } from './pages/Dashboard';
 
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { userProfile, loading } = useWeb3Auth();
   const [showLogin, setShowLogin] = useState(false);
 
   if (loading) {
@@ -16,12 +16,12 @@ function AppContent() {
     );
   }
 
-  if (user) {
+  if (userProfile && userProfile.organization) {
     return <Dashboard />;
   }
 
-  if (showLogin) {
-    return <LoginPage onBack={() => setShowLogin(false)} />;
+  if (showLogin || (userProfile && !userProfile.organization)) {
+    return <Web3LoginPage onBack={() => setShowLogin(false)} />;
   }
 
   return <LandingPage onGetStarted={() => setShowLogin(true)} />;
@@ -29,9 +29,9 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
+    <Web3AuthProvider>
       <AppContent />
-    </AuthProvider>
+    </Web3AuthProvider>
   );
 }
 

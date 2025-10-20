@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Mail, Building, Phone, Wallet, Save, Star, Package, Award, TrendingUp, Calendar } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useWeb3Auth } from '../../contexts/Web3AuthContext';
 import { supabase } from '../../lib/supabase';
 
 interface ProfileStats {
@@ -13,12 +13,11 @@ interface ProfileStats {
 }
 
 export const ProfileSection = () => {
-  const { userProfile } = useAuth();
+  const { userProfile, walletAddress, updateUserProfile } = useWeb3Auth();
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState(userProfile?.full_name || '');
   const [organization, setOrganization] = useState(userProfile?.organization || '');
   const [phone, setPhone] = useState(userProfile?.phone || '');
-  const [walletAddress, setWalletAddress] = useState(userProfile?.wallet_address || '');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [stats, setStats] = useState<ProfileStats>({
@@ -56,18 +55,7 @@ export const ProfileSection = () => {
     setMessage('');
 
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({
-          full_name: fullName,
-          organization,
-          phone,
-          wallet_address: walletAddress,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', userProfile.id);
-
-      if (error) throw error;
+      await updateUserProfile(fullName, userProfile.role, organization, phone);
 
       setMessage('Profile updated successfully');
       setEditing(false);
@@ -236,19 +224,10 @@ export const ProfileSection = () => {
               <Wallet className="inline w-4 h-4 mr-2" />
               Blockchain Wallet Address
             </label>
-            {editing ? (
-              <input
-                type="text"
-                value={walletAddress}
-                onChange={(e) => setWalletAddress(e.target.value)}
-                className="w-full px-4 py-2 border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
-                placeholder="0x..."
-              />
-            ) : (
-              <p className="text-emerald-700 py-2 font-mono text-sm break-all">
-                {userProfile.wallet_address || 'Not set'}
-              </p>
-            )}
+            <p className="text-emerald-700 py-2 font-mono text-sm break-all bg-emerald-50 px-4 rounded-lg">
+              {walletAddress || userProfile.wallet_address || 'Not connected'}
+            </p>
+            <p className="text-xs text-emerald-600 mt-1">Managed by Web3Auth</p>
           </div>
 
           <div>
@@ -302,7 +281,6 @@ export const ProfileSection = () => {
                 setFullName(userProfile.full_name);
                 setOrganization(userProfile.organization);
                 setPhone(userProfile.phone);
-                setWalletAddress(userProfile.wallet_address);
               }}
               className="px-6 py-2 border border-emerald-300 text-emerald-700 rounded-lg font-medium hover:bg-emerald-50 transition-colors"
             >

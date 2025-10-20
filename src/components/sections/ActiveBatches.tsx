@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Package, MapPin, Thermometer, Droplets } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useWeb3Auth } from '../../contexts/Web3AuthContext';
 import { supabase, Batch, BatchPhase } from '../../lib/supabase';
 
 export const ActiveBatches = () => {
-  const { userProfile } = useAuth();
+  const { userProfile } = useWeb3Auth();
   const [batches, setBatches] = useState<(Batch & { phases?: BatchPhase[] })[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -1,5 +1,5 @@
 import { User, Package, CheckCircle, Bot, Trash2, Receipt, LogOut } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useWeb3Auth } from '../contexts/Web3AuthContext';
 
 interface SidebarProps {
   activeSection: string;
@@ -7,7 +7,7 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ activeSection, onSectionChange }: SidebarProps) => {
-  const { signOut, userProfile } = useAuth();
+  const { logout, userProfile } = useWeb3Auth();
 
   const menuItems = [
     { id: 'profile', label: 'Profile', icon: User },
@@ -70,7 +70,7 @@ export const Sidebar = ({ activeSection, onSectionChange }: SidebarProps) => {
 
       <div className="p-4 border-t border-emerald-100">
         <button
-          onClick={signOut}
+          onClick={logout}
           className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-all"
         >
           <LogOut className="w-5 h-5" />
