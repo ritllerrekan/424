@@ -2,20 +2,24 @@ import { uploadJSON, uploadFile, retrieveContent } from './pinata';
 import { BatchMetadata, IPFSUploadResult } from './types';
 
 export async function uploadBatchMetadata(
-  metadata: BatchMetadata
-): Promise<IPFSUploadResult> {
+  metadata: { type: string; data: any } | BatchMetadata
+): Promise<string> {
   try {
+    const timestamp = Date.now().toString();
+    const batchId = 'batchId' in metadata ? metadata.batchId : 'unknown';
+    const type = 'type' in metadata ? metadata.type : metadata.role;
+
     const result = await uploadJSON(metadata, {
-      name: `batch-${metadata.batchId}-${metadata.role}`,
+      name: `batch-${batchId}-${type}`,
       keyvalues: {
         type: 'batch-metadata',
-        batchId: metadata.batchId,
-        role: metadata.role,
-        timestamp: metadata.timestamp,
+        batchId: batchId.toString(),
+        role: type,
+        timestamp,
       },
     });
 
-    return result;
+    return result.cid;
   } catch (error) {
     console.error('Failed to upload batch metadata:', error);
     throw new Error(`Failed to upload batch metadata: ${(error as Error).message}`);
@@ -73,7 +77,7 @@ export async function uploadCompleteBatch(
   images?: File[],
   documents?: File[]
 ): Promise<{
-  metadata: IPFSUploadResult;
+  metadata: string;
   images: IPFSUploadResult[];
   documents: IPFSUploadResult[];
 }> {

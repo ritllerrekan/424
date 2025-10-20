@@ -40,11 +40,15 @@ export async function uploadJSON(
   return withRetry(async () => {
     const pinata = getPinataClient();
 
+    const metadata: any = {
+      name: options?.name || `json-${Date.now()}`,
+    };
+    if (options?.keyvalues) {
+      metadata.keyvalues = options.keyvalues;
+    }
+
     const result: PinataResponse = await pinata.pinJSONToIPFS(data, {
-      pinataMetadata: {
-        name: options?.name || `json-${Date.now()}`,
-        keyvalues: options?.keyvalues,
-      },
+      pinataMetadata: metadata,
     });
 
     const uploadResult: IPFSUploadResult = {
@@ -83,18 +87,26 @@ export async function uploadFile(
       const blob = new Blob(chunks);
       const buffer = Buffer.from(await blob.arrayBuffer());
 
+      const bufferMetadata: any = {
+        name: options?.name || file.name || `file-${Date.now()}`,
+      };
+      if (options?.keyvalues) {
+        bufferMetadata.keyvalues = options.keyvalues;
+      }
+
       result = await pinata.pinFileToIPFS(buffer, {
-        pinataMetadata: {
-          name: options?.name || file.name || `file-${Date.now()}`,
-          keyvalues: options?.keyvalues,
-        },
+        pinataMetadata: bufferMetadata,
       });
     } else {
+      const fileMetadata: any = {
+        name: options?.name || `file-${Date.now()}`,
+      };
+      if (options?.keyvalues) {
+        fileMetadata.keyvalues = options.keyvalues;
+      }
+
       result = await pinata.pinFileToIPFS(file, {
-        pinataMetadata: {
-          name: options?.name || `file-${Date.now()}`,
-          keyvalues: options?.keyvalues,
-        },
+        pinataMetadata: fileMetadata,
       });
     }
 
