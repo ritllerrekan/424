@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useWeb3Auth } from '../contexts/Web3AuthContext';
-import { Package, LogOut, Plus, List, TrendingDown } from 'lucide-react';
+import { Package, LogOut, Plus, List, TrendingDown, History } from 'lucide-react';
 import { WasteMetricForm } from '../components/WasteMetricForm';
 import { WasteMetricsList } from '../components/WasteMetricsList';
 import { WasteMetricsDashboard } from '../components/WasteMetricsDashboard';
 import { BatchComparisonChart } from '../components/BatchComparisonChart';
+import { TransactionHistory } from '../components/TransactionHistory';
 import { WasteMetric, WastePhase } from '../types/waste';
 import { recordWasteMetric, getUniqueBatchIds } from '../services/wasteService';
 import { createClient } from '@supabase/supabase-js';
@@ -16,7 +17,7 @@ const supabase = createClient(
 
 export function Dashboard() {
   const { userProfile, logout, walletAddress, userId } = useWeb3Auth();
-  const [activeTab, setActiveTab] = useState<'view' | 'create' | 'waste'>('view');
+  const [activeTab, setActiveTab] = useState<'view' | 'create' | 'waste' | 'transactions'>('view');
   const [showWasteForm, setShowWasteForm] = useState(false);
   const [wasteMetrics, setWasteMetrics] = useState<WasteMetric[]>([]);
   const [isLoadingWaste, setIsLoadingWaste] = useState(false);
@@ -126,10 +127,10 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-4 mb-6 overflow-x-auto pb-2">
           <button
             onClick={() => setActiveTab('view')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${
               activeTab === 'view'
                 ? 'bg-emerald-600 text-white'
                 : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
@@ -140,7 +141,7 @@ export function Dashboard() {
           </button>
           <button
             onClick={() => setActiveTab('create')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${
               activeTab === 'create'
                 ? 'bg-emerald-600 text-white'
                 : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
@@ -151,7 +152,7 @@ export function Dashboard() {
           </button>
           <button
             onClick={() => setActiveTab('waste')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${
               activeTab === 'waste'
                 ? 'bg-emerald-600 text-white'
                 : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
@@ -159,6 +160,17 @@ export function Dashboard() {
           >
             <TrendingDown className="w-5 h-5" />
             Waste Metrics
+          </button>
+          <button
+            onClick={() => setActiveTab('transactions')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${
+              activeTab === 'transactions'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+            }`}
+          >
+            <History className="w-5 h-5" />
+            Transactions
           </button>
         </div>
 
@@ -183,6 +195,8 @@ export function Dashboard() {
               )}
             </div>
           )
+        ) : activeTab === 'transactions' ? (
+          <TransactionHistory />
         ) : (
           <div className="bg-white rounded-lg shadow-md p-8">
             {activeTab === 'view' ? (
