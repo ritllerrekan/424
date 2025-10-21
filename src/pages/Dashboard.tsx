@@ -9,9 +9,13 @@ import { TransactionHistory } from '../components/TransactionHistory';
 import { CollectorBatchForm, CollectorBatchData } from '../components/CollectorBatchForm';
 import { CollectorBatchList } from '../components/CollectorBatchList';
 import { BatchDetailsModal } from '../components/BatchDetailsModal';
+import { ProcessorBatchForm, ProcessorBatchFormData } from '../components/ProcessorBatchForm';
+import { ProcessorBatchList } from '../components/ProcessorBatchList';
+import { ProcessorBatchDetailsModal } from '../components/ProcessorBatchDetailsModal';
 import { WasteMetric, WastePhase } from '../types/waste';
 import { recordWasteMetric, getUniqueBatchIds } from '../services/wasteService';
 import { createCollectorBatch, CollectorBatch } from '../services/collectorBatchService';
+import { createProcessorBatch, ProcessorBatch } from '../services/processorBatchService';
 import { createClient } from '@supabase/supabase-js';
 import { GlassCard, GlassButton } from '../components/glass';
 
@@ -28,6 +32,7 @@ export function Dashboard() {
   const [isLoadingWaste, setIsLoadingWaste] = useState(false);
   const [batchIds, setBatchIds] = useState<string[]>([]);
   const [selectedBatch, setSelectedBatch] = useState<CollectorBatch | null>(null);
+  const [selectedProcessorBatch, setSelectedProcessorBatch] = useState<ProcessorBatch | null>(null);
   const [wasteAmount, setWasteAmount] = useState<number>(0);
 
   useEffect(() => {
@@ -86,6 +91,18 @@ export function Dashboard() {
       setWasteAmount(0);
     } catch (error) {
       console.error('Error creating batch:', error);
+      throw error;
+    }
+  };
+
+  const handleCreateProcessorBatch = async (batchData: ProcessorBatchFormData) => {
+    if (!userId) return;
+    try {
+      await createProcessorBatch(batchData, wasteAmount);
+      setActiveTab('view');
+      setWasteAmount(0);
+    } catch (error) {
+      console.error('Error creating processor batch:', error);
       throw error;
     }
   };
@@ -214,22 +231,44 @@ export function Dashboard() {
         ) : activeTab === 'transactions' ? (
           <TransactionHistory />
         ) : activeTab === 'view' ? (
-          <CollectorBatchList
-            userId={userId || ''}
-            onViewDetails={(batch) => setSelectedBatch(batch)}
-          />
+          userProfile?.role === 'processor' ? (
+            <ProcessorBatchList
+              userId={userId || ''}
+              onViewDetails={(batch) => setSelectedProcessorBatch(batch)}
+            />
+          ) : (
+            <CollectorBatchList
+              userId={userId || ''}
+              onViewDetails={(batch) => setSelectedBatch(batch)}
+            />
+          )
         ) : (
-          <CollectorBatchForm
-            onSubmit={handleCreateBatch}
-            onCancel={() => setActiveTab('view')}
-            userId={userId || ''}
-          />
+          userProfile?.role === 'processor' ? (
+            <ProcessorBatchForm
+              onSubmit={handleCreateProcessorBatch}
+              onCancel={() => setActiveTab('view')}
+              userId={userId || ''}
+            />
+          ) : (
+            <CollectorBatchForm
+              onSubmit={handleCreateBatch}
+              onCancel={() => setActiveTab('view')}
+              userId={userId || ''}
+            />
+          )
         )}
 
         {selectedBatch && (
           <BatchDetailsModal
             batch={selectedBatch}
             onClose={() => setSelectedBatch(null)}
+          />
+        )}
+
+        {selectedProcessorBatch && (
+          <ProcessorBatchDetailsModal
+            batch={selectedProcessorBatch}
+            onClose={() => setSelectedProcessorBatch(null)}
           />
         )}
       </div>
