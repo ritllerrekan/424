@@ -11,7 +11,8 @@ import {
   Loader2,
   Download,
   TrendingUp,
-  Activity
+  Activity,
+  DollarSign
 } from 'lucide-react';
 import { ethers } from 'ethers';
 import {
@@ -125,6 +126,8 @@ export function TransactionHistory() {
       { key: 'batchId', label: 'Batch ID' },
       { key: 'phase', label: 'Phase' },
       { key: 'gasUsed', label: 'Gas Used' },
+      { key: 'gasPrice', label: 'Gas Price (Gwei)' },
+      { key: 'transactionCost', label: 'Transaction Cost (mMATIC)' },
       { key: 'status', label: 'Status' },
       { key: 'description', label: 'Description' }
     ];
@@ -137,6 +140,8 @@ export function TransactionHistory() {
       batchId: tx.metadata.batchId || '',
       phase: tx.metadata.phase || '',
       gasUsed: tx.gasUsed,
+      gasPrice: formatGasPrice(tx.gasPrice),
+      transactionCost: (parseFloat(formatEther((BigInt(tx.gasUsed) * BigInt(tx.gasPrice)).toString())) * 1000).toFixed(4),
       status: tx.status,
       description: tx.metadata.description
     }));
@@ -330,11 +335,17 @@ export function TransactionHistory() {
 
           <div className="backdrop-blur-md bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-4 border border-amber-200/50">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-amber-700">Total Gas Used</span>
-              <TrendingUp className="w-5 h-5 text-amber-600" />
+              <span className="text-sm font-medium text-amber-700">Total Cost</span>
+              <DollarSign className="w-5 h-5 text-amber-600" />
             </div>
             <p className="text-2xl font-bold text-gray-800">
-              {transactions.reduce((sum, tx) => sum + parseInt(tx.gasUsed || '0'), 0).toLocaleString()}
+              {transactions.reduce((sum, tx) => {
+                try {
+                  return sum + parseFloat(formatEther((BigInt(tx.gasUsed) * BigInt(tx.gasPrice)).toString()));
+                } catch {
+                  return sum;
+                }
+              }, 0).toFixed(6)} MATIC
             </p>
           </div>
         </div>
@@ -403,7 +414,7 @@ export function TransactionHistory() {
                   </a>
                 </div>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-3 text-sm">
                   <div>
                     <span className="text-gray-500">Batch ID:</span>
                     <p className="font-mono text-gray-800">{tx.metadata.batchId || 'N/A'}</p>
@@ -417,10 +428,24 @@ export function TransactionHistory() {
                     <p className="font-mono text-gray-800">{parseInt(tx.gasUsed).toLocaleString()}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Time:</span>
-                    <p className="text-gray-800">
-                      {new Date(tx.blockTimestamp * 1000).toLocaleString()}
+                    <span className="text-gray-500">Gas Price:</span>
+                    <p className="font-mono text-gray-800">{formatGasPrice(tx.gasPrice)}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Cost:</span>
+                    <p className="font-mono text-gray-800">
+                      {(parseFloat(formatEther((BigInt(tx.gasUsed) * BigInt(tx.gasPrice)).toString())) * 1000).toFixed(4)} mMATIC
                     </p>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="grid grid-cols-1 gap-2 text-sm">
+                    <div>
+                      <span className="text-gray-500">Time:</span>
+                      <p className="text-gray-800">
+                        {new Date(tx.blockTimestamp * 1000).toLocaleString()}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
