@@ -3,6 +3,37 @@ import { WasteMetricIPFSData } from '../types/waste';
 const PINATA_API_KEY = import.meta.env.VITE_PINATA_API_KEY;
 const PINATA_SECRET_KEY = import.meta.env.VITE_PINATA_SECRET_KEY;
 
+export async function uploadToIPFS(file: File): Promise<string> {
+  if (!PINATA_API_KEY || !PINATA_SECRET_KEY) {
+    throw new Error('Pinata API credentials not configured');
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+      method: 'POST',
+      headers: {
+        'pinata_api_key': PINATA_API_KEY,
+        'pinata_secret_api_key': PINATA_SECRET_KEY
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`IPFS upload failed: ${errorData}`);
+    }
+
+    const result = await response.json();
+    return result.IpfsHash;
+  } catch (error) {
+    console.error('Error uploading file to IPFS:', error);
+    throw error;
+  }
+}
+
 export async function uploadWasteMetadataToIPFS(
   wasteData: WasteMetricIPFSData
 ): Promise<string> {
