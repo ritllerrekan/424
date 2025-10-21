@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useWeb3Auth } from '../contexts/Web3AuthContext';
 import { Package, ArrowLeft } from 'lucide-react';
+import { GlassCard, GlassButton, GlassInput, GlassSelect } from '../components/glass';
 
 interface LoginPageProps {
   onBack: () => void;
@@ -48,118 +49,109 @@ export function LoginPage({ onBack }: LoginPageProps) {
 
   if (showProfileForm || (userProfile && !userProfile.organization)) {
     return (
-      <div className="min-h-screen bg-emerald-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
-          <div className="flex items-center gap-2 mb-6">
-            <Package className="w-8 h-8 text-emerald-600" />
-            <span className="text-2xl font-bold text-gray-800">FoodTrace</span>
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-slate-900 to-emerald-900 flex items-center justify-center p-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20" />
+
+        <GlassCard className="max-w-md w-full relative z-10 animate-scale-in">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="p-2 bg-emerald-500/20 rounded-lg">
+              <Package className="w-6 h-6 text-emerald-300" />
+            </div>
+            <span className="text-2xl font-bold text-white">FoodTrace</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Complete Your Profile</h2>
-          <p className="text-gray-600 mb-6">Tell us about your organization</p>
+          <h2 className="text-2xl font-bold text-white mb-2">Complete Your Profile</h2>
+          <p className="text-white/70 mb-8">Tell us about your organization</p>
 
-          <form onSubmit={handleProfileSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={formData.fullName}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                required
-              />
-            </div>
+          <form onSubmit={handleProfileSubmit} className="space-y-6">
+            <GlassInput
+              label="Full Name"
+              value={formData.fullName}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              required
+              placeholder="Enter your full name"
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Role in Supply Chain
-              </label>
-              <select
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                required
-              >
-                <option value="">Select a role</option>
-                <option value="collector">Collector</option>
-                <option value="tester">Tester</option>
-                <option value="processor">Processor</option>
-                <option value="manufacturer">Manufacturer</option>
-              </select>
-            </div>
+            <GlassSelect
+              label="Role in Supply Chain"
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              options={[
+                { value: '', label: 'Select a role' },
+                { value: 'collector', label: 'Collector' },
+                { value: 'tester', label: 'Tester' },
+                { value: 'processor', label: 'Processor' },
+                { value: 'manufacturer', label: 'Manufacturer' },
+              ]}
+              required
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Organization
-              </label>
-              <input
-                type="text"
-                value={formData.organization}
-                onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                required
-              />
-            </div>
+            <GlassInput
+              label="Organization"
+              value={formData.organization}
+              onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
+              required
+              placeholder="Enter your organization name"
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contact
-              </label>
-              <input
-                type="text"
-                value={formData.contact}
-                onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                required
-              />
-            </div>
+            <GlassInput
+              label="Contact"
+              value={formData.contact}
+              onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+              required
+              placeholder="Enter your contact information"
+            />
 
-            <button
+            <GlassButton
               type="submit"
+              variant="accent"
               disabled={loading}
-              className="w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              fullWidth
             >
               {loading ? 'Saving...' : 'Complete Profile'}
-            </button>
+            </GlassButton>
           </form>
-        </div>
+        </GlassCard>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-emerald-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-slate-900 to-emerald-900 flex items-center justify-center p-6 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20" />
+
+      <GlassCard className="max-w-md w-full relative z-10 animate-scale-in">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6"
+          className="flex items-center gap-2 text-white/70 hover:text-white mb-8 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
           Back
         </button>
 
-        <div className="flex items-center gap-2 mb-6">
-          <Package className="w-8 h-8 text-emerald-600" />
-          <span className="text-2xl font-bold text-gray-800">FoodTrace</span>
+        <div className="flex items-center gap-3 mb-8">
+          <div className="p-2 bg-emerald-500/20 rounded-lg">
+            <Package className="w-6 h-6 text-emerald-300" />
+          </div>
+          <span className="text-2xl font-bold text-white">FoodTrace</span>
         </div>
 
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome Back</h2>
-        <p className="text-gray-600 mb-8">Connect your wallet to continue</p>
+        <h2 className="text-2xl font-bold text-white mb-2">Welcome Back</h2>
+        <p className="text-white/70 mb-8">Connect your wallet to continue</p>
 
-        <button
+        <GlassButton
           onClick={handleLogin}
           disabled={loading}
-          className="w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          variant="accent"
+          fullWidth
         >
           {loading ? 'Connecting...' : 'Connect with Web3Auth'}
-        </button>
+        </GlassButton>
 
-        <p className="text-sm text-gray-500 mt-6 text-center">
+        <p className="text-sm text-white/50 mt-6 text-center">
           First time here? Connect to create your account
         </p>
-      </div>
+      </GlassCard>
     </div>
   );
 }

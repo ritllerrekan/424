@@ -3,6 +3,7 @@ import { Package, Search, Camera } from 'lucide-react';
 import { QRCodeScanner } from '../components/QRCodeScanner';
 import { BatchDetailsViewer } from '../components/BatchDetailsViewer';
 import { QRCodeData } from '../services/qrCodeService';
+import { GlassCard, GlassButton, GlassInput } from '../components/glass';
 
 export function PublicBatchTracker() {
   const [batchId, setBatchId] = useState('');
@@ -44,62 +45,66 @@ export function PublicBatchTracker() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50">
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-slate-900 to-emerald-900 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20" />
+
+      <nav className="backdrop-blur-xl bg-white/5 border-b border-white/10 shadow-glass relative z-10">
         <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center gap-2">
-            <Package className="w-8 h-8 text-emerald-600" />
-            <span className="text-2xl font-bold text-gray-800">FoodTrace</span>
-            <span className="text-sm text-gray-500 ml-2">Public Tracker</span>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-500/20 rounded-lg">
+              <Package className="w-6 h-6 text-emerald-300" />
+            </div>
+            <span className="text-2xl font-bold text-white">FoodTrace</span>
+            <span className="text-sm text-white/60 ml-2">Public Tracker</span>
           </div>
         </div>
       </nav>
 
-      <div className="container mx-auto px-6 py-12">
+      <div className="container mx-auto px-6 py-12 relative z-10">
         {scannedData ? (
           <BatchDetailsViewer qrData={scannedData} onClose={handleCloseBatchDetails} />
         ) : (
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">Track Your Food</h1>
-            <p className="text-xl text-gray-600">
+          <div className="text-center mb-12 animate-fade-in">
+            <h1 className="text-5xl font-bold text-white mb-4">Track Your Food</h1>
+            <p className="text-xl text-white/80">
               Enter a batch ID to see the complete journey of your food from farm to table
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <GlassCard className="animate-scale-in">
             {!showScanner ? (
               <>
             <form onSubmit={handleSearch}>
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
-                  <input
-                    type="text"
+                  <GlassInput
                     value={batchId}
                     onChange={(e) => setBatchId(e.target.value)}
                     placeholder="Enter batch ID or scan QR code"
-                    className="w-full px-6 py-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-lg"
+                    icon={<Search className="w-5 h-5" />}
                   />
                 </div>
-                <button
+                <GlassButton
                   type="submit"
                   disabled={searching || !batchId.trim()}
-                  className="px-8 py-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  variant="accent"
+                  size="lg"
                 >
-                  <Search className="w-5 h-5" />
                   {searching ? 'Searching...' : 'Track'}
-                </button>
+                </GlassButton>
               </div>
             </form>
 
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <button
+            <div className="mt-6 pt-6 border-t border-white/10">
+              <GlassButton
                 onClick={() => setShowScanner(true)}
-                className="w-full px-6 py-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+                variant="primary"
+                fullWidth
               >
                 <Camera className="w-5 h-5" />
                 Scan QR Code Instead
-              </button>
+              </GlassButton>
             </div>
               </>
             ) : (
@@ -109,39 +114,41 @@ export function PublicBatchTracker() {
                   showManualEntry={false}
                   showFileUpload={true}
                 />
-                <button
+                <GlassButton
                   onClick={() => setShowScanner(false)}
-                  className="mt-4 w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  variant="secondary"
+                  fullWidth
+                  className="mt-4"
                 >
                   Back to Manual Entry
-                </button>
+                </GlassButton>
               </div>
             )}
 
-            <div className="mt-8 pt-8 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">How to track</h3>
-              <ol className="space-y-3 text-gray-600">
+            <div className="mt-8 pt-8 border-t border-white/10">
+              <h3 className="text-lg font-semibold text-white mb-4">How to track</h3>
+              <ol className="space-y-3 text-white/70">
                 <li className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-sm font-semibold">
+                  <span className="flex-shrink-0 w-7 h-7 bg-emerald-500/20 text-emerald-300 rounded-full flex items-center justify-center text-sm font-semibold border border-emerald-400/30">
                     1
                   </span>
                   <span>Find the batch ID on your product label or QR code</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-sm font-semibold">
+                  <span className="flex-shrink-0 w-7 h-7 bg-emerald-500/20 text-emerald-300 rounded-full flex items-center justify-center text-sm font-semibold border border-emerald-400/30">
                     2
                   </span>
                   <span>Enter the batch ID in the search box above</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-sm font-semibold">
+                  <span className="flex-shrink-0 w-7 h-7 bg-emerald-500/20 text-emerald-300 rounded-full flex items-center justify-center text-sm font-semibold border border-emerald-400/30">
                     3
                   </span>
                   <span>View the complete supply chain history and quality information</span>
                 </li>
               </ol>
             </div>
-          </div>
+          </GlassCard>
         </div>
         )}
       </div>

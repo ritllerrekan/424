@@ -9,6 +9,7 @@ import { TransactionHistory } from '../components/TransactionHistory';
 import { WasteMetric, WastePhase } from '../types/waste';
 import { recordWasteMetric, getUniqueBatchIds } from '../services/wasteService';
 import { createClient } from '@supabase/supabase-js';
+import { GlassCard, GlassButton } from '../components/glass';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -77,108 +78,98 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-slate-900 to-emerald-900 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20" />
+
+      <nav className="backdrop-blur-xl bg-white/5 border-b border-white/10 shadow-glass sticky top-0 z-40">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Package className="w-8 h-8 text-emerald-600" />
-              <span className="text-2xl font-bold text-gray-800">FoodTrace</span>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500/20 rounded-lg">
+                <Package className="w-6 h-6 text-emerald-300" />
+              </div>
+              <span className="text-2xl font-bold text-white">FoodTrace</span>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-sm font-medium text-gray-800">{userProfile?.full_name}</div>
-                <div className="text-xs text-gray-500">{getRoleDisplay()}</div>
+              <div className="text-right hidden md:block">
+                <div className="text-sm font-medium text-white">{userProfile?.full_name}</div>
+                <div className="text-xs text-white/60">{getRoleDisplay()}</div>
               </div>
-              <button
+              <GlassButton
                 onClick={() => window.location.href = '/qr'}
-                className="flex items-center gap-2 px-4 py-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
+                variant="secondary"
+                size="sm"
               >
                 <QrCode className="w-4 h-4" />
-                QR Codes
-              </button>
-              <button
+                <span className="hidden sm:inline">QR Codes</span>
+              </GlassButton>
+              <GlassButton
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                variant="secondary"
+                size="sm"
               >
                 <LogOut className="w-4 h-4" />
-                Logout
-              </button>
+                <span className="hidden sm:inline">Logout</span>
+              </GlassButton>
             </div>
           </div>
         </div>
       </nav>
 
-      <div className="container mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h1>
-          <p className="text-gray-600">
+      <div className="container mx-auto px-6 py-8 relative z-10">
+        <div className="mb-8 animate-fade-in">
+          <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
+          <p className="text-white/70">
             Welcome back, {userProfile?.full_name || 'User'}! Manage your batches and track your supply chain.
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <GlassCard className="mb-6 animate-slide-up">
           <div className="grid md:grid-cols-3 gap-4">
-            <div className="p-4 bg-emerald-50 rounded-lg">
-              <div className="text-sm text-gray-600 mb-1">Organization</div>
-              <div className="text-lg font-semibold text-gray-800">{userProfile?.organization || 'Not set'}</div>
+            <div className="p-4 bg-emerald-500/10 rounded-xl border border-emerald-400/20">
+              <div className="text-sm text-white/60 mb-1">Organization</div>
+              <div className="text-lg font-semibold text-white">{userProfile?.organization || 'Not set'}</div>
             </div>
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <div className="text-sm text-gray-600 mb-1">Wallet Address</div>
-              <div className="text-sm font-mono text-gray-800">{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</div>
+            <div className="p-4 bg-blue-500/10 rounded-xl border border-blue-400/20">
+              <div className="text-sm text-white/60 mb-1">Wallet Address</div>
+              <div className="text-sm font-mono text-white">{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</div>
             </div>
-            <div className="p-4 bg-amber-50 rounded-lg">
-              <div className="text-sm text-gray-600 mb-1">Role</div>
-              <div className="text-lg font-semibold text-gray-800">{getRoleDisplay()}</div>
+            <div className="p-4 bg-amber-500/10 rounded-xl border border-amber-400/20">
+              <div className="text-sm text-white/60 mb-1">Role</div>
+              <div className="text-lg font-semibold text-white">{getRoleDisplay()}</div>
             </div>
           </div>
-        </div>
+        </GlassCard>
 
         <div className="flex gap-4 mb-6 overflow-x-auto pb-2">
-          <button
+          <GlassButton
             onClick={() => setActiveTab('view')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${
-              activeTab === 'view'
-                ? 'bg-emerald-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-            }`}
+            variant={activeTab === 'view' ? 'accent' : 'secondary'}
           >
             <List className="w-5 h-5" />
             View Batches
-          </button>
-          <button
+          </GlassButton>
+          <GlassButton
             onClick={() => setActiveTab('create')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${
-              activeTab === 'create'
-                ? 'bg-emerald-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-            }`}
+            variant={activeTab === 'create' ? 'accent' : 'secondary'}
           >
             <Plus className="w-5 h-5" />
             Create Batch
-          </button>
-          <button
+          </GlassButton>
+          <GlassButton
             onClick={() => setActiveTab('waste')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${
-              activeTab === 'waste'
-                ? 'bg-emerald-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-            }`}
+            variant={activeTab === 'waste' ? 'accent' : 'secondary'}
           >
             <TrendingDown className="w-5 h-5" />
             Waste Metrics
-          </button>
-          <button
+          </GlassButton>
+          <GlassButton
             onClick={() => setActiveTab('transactions')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${
-              activeTab === 'transactions'
-                ? 'bg-emerald-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-            }`}
+            variant={activeTab === 'transactions' ? 'accent' : 'secondary'}
           >
             <History className="w-5 h-5" />
             Transactions
-          </button>
+          </GlassButton>
         </div>
 
         {activeTab === 'waste' ? (
@@ -205,27 +196,27 @@ export function Dashboard() {
         ) : activeTab === 'transactions' ? (
           <TransactionHistory />
         ) : (
-          <div className="bg-white rounded-lg shadow-md p-8">
+          <GlassCard className="p-8">
             {activeTab === 'view' ? (
               <div className="text-center py-12">
-                <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">No Batches Yet</h3>
-                <p className="text-gray-600 mb-6">Get started by creating your first batch</p>
-                <button
+                <Package className="w-16 h-16 text-white/30 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">No Batches Yet</h3>
+                <p className="text-white/70 mb-6">Get started by creating your first batch</p>
+                <GlassButton
                   onClick={() => setActiveTab('create')}
-                  className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                  variant="accent"
                 >
                   Create Batch
-                </button>
+                </GlassButton>
               </div>
             ) : (
               <div className="text-center py-12">
-                <Plus className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">Create New Batch</h3>
-                <p className="text-gray-600 mb-6">Batch creation form coming soon</p>
+                <Plus className="w-16 h-16 text-white/30 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">Create New Batch</h3>
+                <p className="text-white/70 mb-6">Batch creation form coming soon</p>
               </div>
             )}
-          </div>
+          </GlassCard>
         )}
       </div>
     </div>
