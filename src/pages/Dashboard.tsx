@@ -6,8 +6,12 @@ import { WasteMetricsList } from '../components/WasteMetricsList';
 import { WasteMetricsDashboard } from '../components/WasteMetricsDashboard';
 import { BatchComparisonChart } from '../components/BatchComparisonChart';
 import { TransactionHistory } from '../components/TransactionHistory';
+import { CollectorBatchForm, CollectorBatchData } from '../components/CollectorBatchForm';
+import { CollectorBatchList } from '../components/CollectorBatchList';
+import { BatchDetailsModal } from '../components/BatchDetailsModal';
 import { WasteMetric, WastePhase } from '../types/waste';
 import { recordWasteMetric, getUniqueBatchIds } from '../services/wasteService';
+import { createCollectorBatch, CollectorBatch } from '../services/collectorBatchService';
 import { createClient } from '@supabase/supabase-js';
 import { GlassCard, GlassButton } from '../components/glass';
 
@@ -23,6 +27,8 @@ export function Dashboard() {
   const [wasteMetrics, setWasteMetrics] = useState<WasteMetric[]>([]);
   const [isLoadingWaste, setIsLoadingWaste] = useState(false);
   const [batchIds, setBatchIds] = useState<string[]>([]);
+  const [selectedBatch, setSelectedBatch] = useState<CollectorBatch | null>(null);
+  const [wasteAmount, setWasteAmount] = useState<number>(0);
 
   useEffect(() => {
     if (userId) {
@@ -68,6 +74,18 @@ export function Dashboard() {
       await loadUserWasteMetrics();
     } catch (error) {
       console.error('Error recording waste:', error);
+      throw error;
+    }
+  };
+
+  const handleCreateBatch = async (batchData: CollectorBatchData) => {
+    if (!userId) return;
+    try {
+      await createCollectorBatch(batchData, wasteAmount);
+      setActiveTab('view');
+      setWasteAmount(0);
+    } catch (error) {
+      console.error('Error creating batch:', error);
       throw error;
     }
   };
@@ -195,28 +213,24 @@ export function Dashboard() {
           )
         ) : activeTab === 'transactions' ? (
           <TransactionHistory />
+        ) : activeTab === 'view' ? (
+          <CollectorBatchList
+            userId={userId || ''}
+            onViewDetails={(batch) => setSelectedBatch(batch)}
+          />
         ) : (
-          <GlassCard className="p-8">
-            {activeTab === 'view' ? (
-              <div className="text-center py-12">
-                <Package className="w-16 h-16 text-white/30 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">No Batches Yet</h3>
-                <p className="text-white/70 mb-6">Get started by creating your first batch</p>
-                <GlassButton
-                  onClick={() => setActiveTab('create')}
-                  variant="accent"
-                >
-                  Create Batch
-                </GlassButton>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Plus className="w-16 h-16 text-white/30 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">Create New Batch</h3>
-                <p className="text-white/70 mb-6">Batch creation form coming soon</p>
-              </div>
-            )}
-          </GlassCard>
+          <CollectorBatchForm
+            onSubmit={handleCreateBatch}
+            onCancel={() => setActiveTab('view')}
+            userId={userId || ''}
+          />
+        )}
+
+        {selectedBatch && (
+          <BatchDetailsModal
+            batch={selectedBatch}
+            onClose={() => setSelectedBatch(null)}
+          />
         )}
       </div>
     </div>
