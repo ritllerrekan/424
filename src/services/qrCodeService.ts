@@ -149,11 +149,74 @@ export async function generateQRCodeWithIPFS(
 
 export function decodeQRData(qrDataString: string): QRCodeData | null {
   try {
-    return JSON.parse(qrDataString);
+    const parsed = JSON.parse(qrDataString);
+
+    if (!parsed.batchId || !parsed.batchNumber || !parsed.contractAddress) {
+      console.error('Missing required QR data fields');
+      return null;
+    }
+
+    return parsed as QRCodeData;
   } catch (error) {
     console.error('Error decoding QR data:', error);
     return null;
   }
+}
+
+export async function validateQRCode(qrData: QRCodeData): Promise<boolean> {
+  try {
+    if (!qrData.batchId || !qrData.contractAddress || !qrData.network) {
+      return false;
+    }
+
+    const expectedNetwork = BLOCKCHAIN_NETWORK;
+    if (qrData.network !== expectedNetwork) {
+      console.warn('QR code network mismatch:', qrData.network, 'vs', expectedNetwork);
+    }
+
+    const timeDifference = Date.now() - qrData.timestamp;
+    const oneYear = 365 * 24 * 60 * 60 * 1000;
+    if (timeDifference > oneYear || timeDifference < -oneYear) {
+      console.warn('QR code timestamp is suspicious:', new Date(qrData.timestamp));
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error validating QR code:', error);
+    return false;
+  }
+}
+
+export function extractBatchIdFromUrl(url: string): string | null {
+  try {
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split('/');
+    const verifyIndex = pathParts.indexOf('verify');
+
+    if (verifyIndex !== -1 && pathParts.length > verifyIndex + 1) {
+      return pathParts[verifyIndex + 1];
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error extracting batch ID from URL:', error);
+    return null;
+  }
+}
+
+export async function generateQRDataUrl(data: QRCodeData): Promise<string> {
+  const qrDataString = JSON.stringify(data);
+
+  return await QRCode.toDataURL(qrDataString, {
+    width: 512,
+    margin: 2,
+    color: {
+      dark: '#000000',
+      light: '#FFFFFF'
+    },
+    errorCorrectionLevel: 'H'
+  });
 }
 
 export async function generatePrintableLabel(
