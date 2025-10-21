@@ -39,7 +39,7 @@ export interface BatchDocument {
 }
 
 export async function createCollectorBatch(
-  batchData: CollectorBatchData,
+  batchData: CollectorBatchData & { transactionHash?: string },
   wasteAmount: number = 0
 ): Promise<string> {
   try {
@@ -67,7 +67,7 @@ export async function createCollectorBatch(
         price_per_unit: batchData.pricePerUnit,
         weight_total: batchData.weightTotal,
         total_price: batchData.totalPrice,
-        qr_code_data: batchData.ipfsHash || '',
+        qr_code_data: batchData.transactionHash || batchData.ipfsHash || '',
         status: 'submitted'
       })
       .select()

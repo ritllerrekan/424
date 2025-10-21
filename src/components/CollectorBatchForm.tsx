@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { MapPin, Cloud, Droplets, Calendar, Package, DollarSign, FileText, Upload, X } from 'lucide-react';
+import { MapPin, Cloud, Droplets, Calendar, Package, DollarSign, FileText, Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { GlassCard, GlassButton, GlassInput } from './glass';
-import { uploadToIPFS } from '../services/ipfsUploadService';
+import { uploadToIPFS, uploadFileToIPFS } from '../services/ipfsUploadService';
+import { useBiconomy } from '../contexts/BiconomyContext';
+import { ethers } from 'ethers';
 
 interface CollectorBatchFormProps {
   onSubmit: (batchData: CollectorBatchData) => Promise<void>;
@@ -29,9 +31,14 @@ export interface CollectorBatchData {
 }
 
 export function CollectorBatchForm({ onSubmit, onCancel, userId }: CollectorBatchFormProps) {
+  const { sendTransaction, loading: biconomyLoading } = useBiconomy();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCapturingLocation, setIsCapturingLocation] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<Array<{ file: File; type: string }>>([]);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [blockchainStatus, setBlockchainStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [transactionHash, setTransactionHash] = useState<string>('');
+  const [statusMessage, setStatusMessage] = useState<string>('');
 
   const [formData, setFormData] = useState<CollectorBatchData>({
     collectorId: userId,
@@ -114,8 +121,20 @@ export function CollectorBatchForm({ onSubmit, onCancel, userId }: CollectorBatc
     }
 
     setIsSubmitting(true);
+    setUploadStatus('uploading');
+    setBlockchainStatus('idle');
+    setStatusMessage('Uploading photos to IPFS...');
 
     try {
+      let documentIpfsHashes: string[] = [];
+
+      if (uploadedFiles.length > 0) {
+        for (const fileData of uploadedFiles) {
+          const hash = await uploadFileToIPFS(fileData.file);
+          documentIpfsHashes.push(hash);
+        }
+      }
+
       const metadata = {
         batchNumber: formData.batchNumber,
         seedCropName: formData.seedCropName,
@@ -130,21 +149,70 @@ export function CollectorBatchForm({ onSubmit, onCancel, userId }: CollectorBatc
         pricePerUnit: formData.pricePerUnit,
         weightTotal: formData.weightTotal,
         totalPrice: formData.totalPrice,
+        documents: documentIpfsHashes,
         timestamp: new Date().toISOString()
       };
 
+      setStatusMessage('Uploading metadata to IPFS...');
       const ipfsHash = await uploadToIPFS(metadata);
+      setUploadStatus('success');
+      setStatusMessage('Upload successful! Submitting to blockchain...');
+
+      setBlockchainStatus('submitting');
+      const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS || '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb';
+
+      const gpsLatInt = formData.gpsLatitude ? Math.floor(formData.gpsLatitude * 1000000) : 0;
+      const gpsLonInt = formData.gpsLongitude ? Math.floor(formData.gpsLongitude * 1000000) : 0;
+      const tempInt = formData.temperature ? Math.floor(formData.temperature * 10) : 0;
+      const pricePerUnitWei = ethers.parseEther(formData.pricePerUnit.toString());
+      const totalPriceWei = ethers.parseEther(formData.totalPrice.toString());
+
+      const contractInterface = new ethers.Interface([
+        'function addCollectorData(string,int256,int256,string,int16,uint8,string,string,bool,string,string,uint256,uint256,uint256,string) returns (uint256)'
+      ]);
+
+      const txData = contractInterface.encodeFunctionData('addCollectorData', [
+        formData.batchNumber,
+        gpsLatInt,
+        gpsLonInt,
+        formData.weatherCondition || '',
+        tempInt,
+        0,
+        formData.harvestDate,
+        formData.seedCropName,
+        formData.pesticideUsed,
+        formData.pesticideName || '',
+        formData.pesticideQuantity || '',
+        pricePerUnitWei,
+        Math.floor(formData.weightTotal * 1000),
+        totalPriceWei,
+        ipfsHash
+      ]);
+
+      const txHash = await sendTransaction(contractAddress, txData);
+      setTransactionHash(txHash);
+      setBlockchainStatus('success');
+      setStatusMessage('Transaction confirmed on blockchain!');
 
       const dataWithIPFS = {
         ...formData,
         documents: uploadedFiles,
-        ipfsHash
+        ipfsHash,
+        transactionHash: txHash
       };
 
       await onSubmit(dataWithIPFS);
+
+      setTimeout(() => {
+        setUploadStatus('idle');
+        setBlockchainStatus('idle');
+        setStatusMessage('');
+      }, 3000);
     } catch (error) {
       console.error('Error submitting batch:', error);
-      alert('Failed to create batch. Please try again.');
+      setUploadStatus('error');
+      setBlockchainStatus('error');
+      setStatusMessage('Failed to create batch. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -401,6 +469,75 @@ export function CollectorBatchForm({ onSubmit, onCancel, userId }: CollectorBatc
           )}
         </div>
 
+        {(uploadStatus !== 'idle' || blockchainStatus !== 'idle') && (
+          <div className="border-t border-white/10 pt-6">
+            <div className="bg-white/5 rounded-xl p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0">
+                  {uploadStatus === 'uploading' && (
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400"></div>
+                  )}
+                  {uploadStatus === 'success' && (
+                    <CheckCircle className="w-8 h-8 text-emerald-400" />
+                  )}
+                  {uploadStatus === 'error' && (
+                    <AlertCircle className="w-8 h-8 text-red-400" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-white mb-1">
+                    {uploadStatus === 'uploading' && 'Uploading to IPFS'}
+                    {uploadStatus === 'success' && 'IPFS Upload Complete'}
+                    {uploadStatus === 'error' && 'Upload Failed'}
+                  </div>
+                  {uploadStatus === 'success' && (
+                    <div className="text-xs text-white/60">Photos and metadata stored on IPFS</div>
+                  )}
+                </div>
+              </div>
+
+              {blockchainStatus !== 'idle' && (
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    {blockchainStatus === 'submitting' && (
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
+                    )}
+                    {blockchainStatus === 'success' && (
+                      <CheckCircle className="w-8 h-8 text-blue-400" />
+                    )}
+                    {blockchainStatus === 'error' && (
+                      <AlertCircle className="w-8 h-8 text-red-400" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-white mb-1">
+                      {blockchainStatus === 'submitting' && 'Submitting to Blockchain'}
+                      {blockchainStatus === 'success' && 'Blockchain Confirmed'}
+                      {blockchainStatus === 'error' && 'Blockchain Submission Failed'}
+                    </div>
+                    {transactionHash && (
+                      <a
+                        href={`https://sepolia.basescan.org/tx/${transactionHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                      >
+                        View Transaction: {transactionHash.slice(0, 10)}...{transactionHash.slice(-8)}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {statusMessage && (
+                <div className="text-sm text-white/80 text-center mt-2">
+                  {statusMessage}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-4 pt-6">
           <GlassButton
             type="button"
@@ -414,7 +551,7 @@ export function CollectorBatchForm({ onSubmit, onCancel, userId }: CollectorBatc
           <GlassButton
             type="submit"
             variant="accent"
-            disabled={isSubmitting}
+            disabled={isSubmitting || biconomyLoading}
             className="flex-1"
           >
             {isSubmitting ? 'Creating Batch...' : 'Create Batch'}

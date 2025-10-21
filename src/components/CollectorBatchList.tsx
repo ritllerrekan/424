@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, MapPin, Calendar, Leaf, AlertCircle, Eye, Trash2 } from 'lucide-react';
+import { Package, MapPin, Calendar, Leaf, AlertCircle, Eye, Trash2, CheckCircle, ExternalLink } from 'lucide-react';
 import { GlassCard, GlassButton } from './glass';
 import { CollectorBatch, getCollectorBatches, deleteBatch } from '../services/collectorBatchService';
 
@@ -113,10 +113,17 @@ export function CollectorBatchList({ userId, onViewDetails }: CollectorBatchList
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
                 <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(batch.status)}`}>
                   {batch.status.charAt(0).toUpperCase() + batch.status.slice(1)}
                 </div>
+
+                {batch.qr_code_data && (
+                  <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/20 rounded-full text-xs text-emerald-300 border border-emerald-400/30">
+                    <CheckCircle className="w-3 h-3" />
+                    <span>On Blockchain</span>
+                  </div>
+                )}
 
                 {batch.pesticide_used && (
                   <div className="flex items-center gap-2 text-xs text-amber-400">
@@ -132,6 +139,20 @@ export function CollectorBatchList({ userId, onViewDetails }: CollectorBatchList
                   </div>
                 )}
               </div>
+
+              {batch.qr_code_data && batch.qr_code_data.startsWith('0x') && (
+                <div className="mt-3 pt-3 border-t border-white/10">
+                  <a
+                    href={`https://sepolia.basescan.org/tx/${batch.qr_code_data}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    <span>View on Blockchain Explorer</span>
+                  </a>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2">
