@@ -12,10 +12,14 @@ import { BatchDetailsModal } from '../components/BatchDetailsModal';
 import { ProcessorBatchForm, ProcessorBatchFormData } from '../components/ProcessorBatchForm';
 import { ProcessorBatchList } from '../components/ProcessorBatchList';
 import { ProcessorBatchDetailsModal } from '../components/ProcessorBatchDetailsModal';
+import { ManufacturerBatchForm, ManufacturerBatchFormData } from '../components/ManufacturerBatchForm';
+import { ManufacturerBatchList } from '../components/ManufacturerBatchList';
+import { ManufacturerBatchDetailsModal } from '../components/ManufacturerBatchDetailsModal';
 import { WasteMetric, WastePhase } from '../types/waste';
 import { recordWasteMetric, getUniqueBatchIds } from '../services/wasteService';
 import { createCollectorBatch, CollectorBatch } from '../services/collectorBatchService';
 import { createProcessorBatch, ProcessorBatch } from '../services/processorBatchService';
+import { createManufacturerBatch, ManufacturerBatch } from '../services/manufacturerBatchService';
 import { createClient } from '@supabase/supabase-js';
 import { GlassCard, GlassButton } from '../components/glass';
 
@@ -33,6 +37,7 @@ export function Dashboard() {
   const [batchIds, setBatchIds] = useState<string[]>([]);
   const [selectedBatch, setSelectedBatch] = useState<CollectorBatch | null>(null);
   const [selectedProcessorBatch, setSelectedProcessorBatch] = useState<ProcessorBatch | null>(null);
+  const [selectedManufacturerBatch, setSelectedManufacturerBatch] = useState<ManufacturerBatch | null>(null);
   const [wasteAmount, setWasteAmount] = useState<number>(0);
 
   useEffect(() => {
@@ -103,6 +108,18 @@ export function Dashboard() {
       setWasteAmount(0);
     } catch (error) {
       console.error('Error creating processor batch:', error);
+      throw error;
+    }
+  };
+
+  const handleCreateManufacturerBatch = async (batchData: ManufacturerBatchFormData) => {
+    if (!userId) return;
+    try {
+      await createManufacturerBatch(batchData, wasteAmount);
+      setActiveTab('view');
+      setWasteAmount(0);
+    } catch (error) {
+      console.error('Error creating manufacturer batch:', error);
       throw error;
     }
   };
@@ -231,7 +248,12 @@ export function Dashboard() {
         ) : activeTab === 'transactions' ? (
           <TransactionHistory />
         ) : activeTab === 'view' ? (
-          userProfile?.role === 'processor' ? (
+          userProfile?.role === 'manufacturer' ? (
+            <ManufacturerBatchList
+              userId={userId || ''}
+              onViewDetails={(batch) => setSelectedManufacturerBatch(batch)}
+            />
+          ) : userProfile?.role === 'processor' ? (
             <ProcessorBatchList
               userId={userId || ''}
               onViewDetails={(batch) => setSelectedProcessorBatch(batch)}
@@ -243,7 +265,13 @@ export function Dashboard() {
             />
           )
         ) : (
-          userProfile?.role === 'processor' ? (
+          userProfile?.role === 'manufacturer' ? (
+            <ManufacturerBatchForm
+              onSubmit={handleCreateManufacturerBatch}
+              onCancel={() => setActiveTab('view')}
+              userId={userId || ''}
+            />
+          ) : userProfile?.role === 'processor' ? (
             <ProcessorBatchForm
               onSubmit={handleCreateProcessorBatch}
               onCancel={() => setActiveTab('view')}
@@ -269,6 +297,13 @@ export function Dashboard() {
           <ProcessorBatchDetailsModal
             batch={selectedProcessorBatch}
             onClose={() => setSelectedProcessorBatch(null)}
+          />
+        )}
+
+        {selectedManufacturerBatch && (
+          <ManufacturerBatchDetailsModal
+            batch={selectedManufacturerBatch}
+            onClose={() => setSelectedManufacturerBatch(null)}
           />
         )}
       </div>
