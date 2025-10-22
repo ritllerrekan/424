@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { WasteMetric, WasteMetricInput, WastePreventionInsight } from '../types/waste';
 import { uploadWasteMetadataToIPFS, generateWasteIPFSMetadata } from '../utils/ipfsWaste';
+import { notifyWasteThreshold } from './notificationService';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -70,6 +71,11 @@ export async function recordWasteMetric(
       .single();
 
     if (error) throw error;
+
+    if (wasteInput.waste_quantity > 50) {
+      await notifyWasteThreshold(userId, wasteInput.waste_quantity, 50);
+    }
+
     return data as WasteMetric;
   } catch (error) {
     console.error('Error recording waste metric:', error);

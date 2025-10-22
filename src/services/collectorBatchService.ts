@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { CollectorBatchData } from '../components/CollectorBatchForm';
 import { uploadMultipleFilesToIPFS } from './ipfsUploadService';
+import { notifyBatchUpdate, notifyWasteThreshold, notifyTransactionConfirmation } from './notificationService';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -101,6 +102,25 @@ export async function createCollectorBatch(
         recorded_by: batchData.collectorId,
         recorded_at: new Date().toISOString()
       });
+
+      if (wasteAmount > 50) {
+        await notifyWasteThreshold(batchData.collectorId, wasteAmount, 50);
+      }
+    }
+
+    await notifyBatchUpdate(
+      batchData.collectorId,
+      batch.id,
+      batch.batch_number,
+      'Collection'
+    );
+
+    if (batchData.transactionHash) {
+      await notifyTransactionConfirmation(
+        batchData.collectorId,
+        batchData.transactionHash,
+        batch.batch_number
+      );
     }
 
     return batch.id;

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { uploadMultipleFilesToIPFS } from './ipfsUploadService';
+import { notifyBatchUpdate, notifyWasteThreshold, notifyTransactionConfirmation } from './notificationService';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -126,6 +127,25 @@ export async function createManufacturerBatch(
         recorded_by: batchData.manufacturerId,
         recorded_at: new Date().toISOString()
       });
+
+      if (wasteAmount > 50) {
+        await notifyWasteThreshold(batchData.manufacturerId, wasteAmount, 50);
+      }
+    }
+
+    await notifyBatchUpdate(
+      batchData.manufacturerId,
+      batch.id,
+      batchData.productName,
+      'Manufacturing'
+    );
+
+    if (batchData.transactionHash) {
+      await notifyTransactionConfirmation(
+        batchData.manufacturerId,
+        batchData.transactionHash,
+        batchData.productName
+      );
     }
 
     return batch.id;

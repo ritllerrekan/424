@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Web3AuthProvider, useWeb3Auth } from './contexts/Web3AuthContext';
 import { BiconomyProvider } from './contexts/BiconomyContext';
 import { AppStateProvider } from './contexts/AppStateContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { Dashboard } from './pages/Dashboard';
@@ -55,9 +56,11 @@ function App() {
   return (
     <AppStateProvider>
       <Web3AuthProvider>
-        <BiconomyProvider>
-          <AppContent />
-        </BiconomyProvider>
+        <NotificationProvider>
+          <BiconomyProvider>
+            <AppContent />
+          </BiconomyProvider>
+        </NotificationProvider>
       </Web3AuthProvider>
     </AppStateProvider>
   );

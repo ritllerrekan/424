@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { uploadMultipleFilesToIPFS } from './ipfsUploadService';
+import { notifyBatchUpdate, notifyWasteThreshold, notifyTransactionConfirmation } from './notificationService';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -121,6 +122,25 @@ export async function createProcessorBatch(
         recorded_by: batchData.processorId,
         recorded_at: new Date().toISOString()
       });
+
+      if (wasteAmount > 50) {
+        await notifyWasteThreshold(batchData.processorId, wasteAmount, 50);
+      }
+    }
+
+    await notifyBatchUpdate(
+      batchData.processorId,
+      batch.id,
+      batch.tester_batch_id,
+      'Processing'
+    );
+
+    if (batchData.transactionHash) {
+      await notifyTransactionConfirmation(
+        batchData.processorId,
+        batchData.transactionHash,
+        batch.tester_batch_id
+      );
     }
 
     return batch.id;
