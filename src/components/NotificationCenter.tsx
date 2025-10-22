@@ -10,12 +10,18 @@ export function NotificationCenter() {
     notifications,
     unreadCount,
     isLoading,
+    notificationPermission,
     markNotificationAsRead,
     markAllNotificationsAsRead,
-    removeNotification
+    removeNotification,
+    requestPermission
   } = useNotifications();
 
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleRequestPermission = async () => {
+    await requestPermission();
+  };
 
   const getSeverityIcon = (severity: NotificationSeverity) => {
     switch (severity) {
@@ -95,6 +101,29 @@ export function NotificationCenter() {
                     <X className="w-5 h-5 text-white/70" />
                   </button>
                 </div>
+
+                {notificationPermission === 'default' && (
+                  <div className="mb-4 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <p className="text-sm text-white/70 mb-2">
+                      Enable browser notifications to stay updated
+                    </p>
+                    <GlassButton
+                      onClick={handleRequestPermission}
+                      className="w-full text-sm"
+                    >
+                      <Bell className="w-4 h-4 mr-1" />
+                      Enable Notifications
+                    </GlassButton>
+                  </div>
+                )}
+
+                {notificationPermission === 'denied' && (
+                  <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                    <p className="text-xs text-white/60">
+                      Notifications are blocked. Enable them in your browser settings.
+                    </p>
+                  </div>
+                )}
 
                 {notifications.length > 0 && (
                   <div className="flex gap-2">

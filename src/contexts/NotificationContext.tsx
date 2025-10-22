@@ -6,7 +6,9 @@ import {
   markAsRead,
   markAllAsRead,
   deleteNotification,
-  subscribeToNotifications
+  subscribeToNotifications,
+  requestNotificationPermission,
+  getNotificationPermission
 } from '../services/notificationService';
 import { useWeb3Auth } from './Web3AuthContext';
 
@@ -14,10 +16,12 @@ interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
   isLoading: boolean;
+  notificationPermission: NotificationPermission;
   refreshNotifications: () => Promise<void>;
   markNotificationAsRead: (id: string) => Promise<void>;
   markAllNotificationsAsRead: () => Promise<void>;
   removeNotification: (id: string) => Promise<void>;
+  requestPermission: () => Promise<NotificationPermission>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -27,6 +31,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
+    getNotificationPermission()
+  );
+
+  const requestPermission = async () => {
+    const permission = await requestNotificationPermission();
+    setNotificationPermission(permission);
+    return permission;
+  };
 
   const refreshNotifications = useCallback(async () => {
     if (!user) {
@@ -113,10 +126,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         notifications,
         unreadCount,
         isLoading,
+        notificationPermission,
         refreshNotifications,
         markNotificationAsRead,
         markAllNotificationsAsRead,
-        removeNotification
+        removeNotification,
+        requestPermission
       }}
     >
       {children}
