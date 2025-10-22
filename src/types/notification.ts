@@ -4,7 +4,9 @@ export type NotificationType =
   | 'waste_threshold'
   | 'transaction_confirmation'
   | 'batch_rejection'
-  | 'phase_change';
+  | 'phase_change'
+  | 'session_warning'
+  | 'session_expiry';
 
 export type NotificationSeverity = 'info' | 'warning' | 'error' | 'success';
 

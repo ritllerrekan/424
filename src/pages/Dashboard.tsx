@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useWeb3Auth } from '../contexts/Web3AuthContext';
 import { Package, LogOut, Plus, List, TrendingDown, History, QrCode, Bot, Sparkles } from 'lucide-react';
 import { NotificationCenter } from '../components/NotificationCenter';
+import { SessionTimer } from '../components/SessionTimer';
 import { WasteMetricForm } from '../components/WasteMetricForm';
 import { WasteMetricsList } from '../components/WasteMetricsList';
 import { WasteMetricsDashboard } from '../components/WasteMetricsDashboard';
@@ -152,6 +153,7 @@ export function Dashboard() {
                 <div className="text-sm font-medium text-white">{userProfile?.full_name}</div>
                 <div className="text-xs text-white/60">{getRoleDisplay()}</div>
               </div>
+              <SessionTimer />
               <NotificationCenter />
               <GlassButton
                 onClick={() => window.location.href = '/qr'}
