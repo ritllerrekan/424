@@ -1,10 +1,23 @@
-import { Download, Share2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Download, Share2, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import { GeneratedQRCode } from '../services/qrCodeService';
+import { FullSupplyChain } from '../services/blockchainService';
+import { WasteMetric } from '../types/waste';
+import {
+  downloadCertificatePDF,
+  uploadCertificateToIPFS,
+  CertificateData,
+  CertificateMetadata
+} from '../services/certificateService';
 
 interface BatchCertificateProps {
   batchNumber: string;
+  batchId: string;
   phase: string;
   qrCode: GeneratedQRCode;
+  supplyChainData: FullSupplyChain;
+  wasteMetrics?: WasteMetric[];
+  userAddress?: string;
   batchDetails: {
     collectorInfo?: {
       organization?: string;
@@ -32,134 +45,72 @@ interface BatchCertificateProps {
 
 export function BatchCertificate({
   batchNumber,
+  batchId,
   phase,
   qrCode,
+  supplyChainData,
+  wasteMetrics,
+  userAddress,
   batchDetails
 }: BatchCertificateProps) {
-  const generateCertificatePDF = async () => {
-    const certificateElement = document.getElementById('certificate-content');
-    if (!certificateElement) return;
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [certificateMetadata, setCertificateMetadata] = useState<CertificateMetadata | null>(null);
+  const [ipfsHash, setIpfsHash] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Please allow pop-ups to download certificate');
-      return;
+  const getCertificateData = (): CertificateData => ({
+    batchNumber,
+    supplyChainData,
+    wasteMetrics,
+    verificationUrl: qrCode.qrData.verificationUrl,
+    contractAddress: qrCode.qrData.contractAddress,
+    network: qrCode.qrData.network
+  });
+
+  const handleDownloadPDF = async () => {
+    try {
+      setIsGenerating(true);
+      setError(null);
+
+      const certificateData = getCertificateData();
+      const metadata = await downloadCertificatePDF(
+        certificateData,
+        userAddress || 'anonymous',
+        batchId
+      );
+
+      setCertificateMetadata(metadata);
+      alert('Certificate downloaded successfully!');
+    } catch (err) {
+      console.error('Error generating certificate:', err);
+      setError('Failed to generate certificate. Please try again.');
+    } finally {
+      setIsGenerating(false);
     }
+  };
 
-    const styles = `
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-          font-family: Arial, sans-serif;
-          padding: 40px;
-          background: white;
-        }
-        .certificate {
-          max-width: 800px;
-          margin: 0 auto;
-          border: 8px double #059669;
-          padding: 40px;
-          background: white;
-        }
-        .header {
-          text-align: center;
-          margin-bottom: 30px;
-          border-bottom: 3px solid #059669;
-          padding-bottom: 20px;
-        }
-        .title {
-          font-size: 36px;
-          font-weight: bold;
-          color: #059669;
-          margin-bottom: 10px;
-        }
-        .subtitle {
-          font-size: 18px;
-          color: #6b7280;
-        }
-        .content {
-          display: grid;
-          grid-template-columns: 1fr 250px;
-          gap: 30px;
-          margin: 30px 0;
-        }
-        .info-section {
-          margin-bottom: 20px;
-        }
-        .info-label {
-          font-weight: bold;
-          color: #374151;
-          font-size: 14px;
-          margin-bottom: 5px;
-        }
-        .info-value {
-          color: #6b7280;
-          font-size: 16px;
-          margin-bottom: 15px;
-        }
-        .qr-section {
-          text-align: center;
-        }
-        .qr-section img {
-          width: 200px;
-          height: 200px;
-          border: 2px solid #e5e7eb;
-          padding: 10px;
-        }
-        .qr-label {
-          margin-top: 10px;
-          font-size: 12px;
-          color: #6b7280;
-        }
-        .footer {
-          margin-top: 40px;
-          padding-top: 20px;
-          border-top: 2px solid #e5e7eb;
-          text-align: center;
-          font-size: 12px;
-          color: #9ca3af;
-        }
-        .blockchain-info {
-          background: #f3f4f6;
-          padding: 15px;
-          border-radius: 8px;
-          margin-top: 20px;
-        }
-        .blockchain-label {
-          font-weight: bold;
-          font-size: 12px;
-          color: #374151;
-        }
-        .blockchain-value {
-          font-family: monospace;
-          font-size: 11px;
-          color: #6b7280;
-          word-break: break-all;
-        }
-        @media print {
-          body { padding: 0; }
-          @page { margin: 20mm; }
-        }
-      </style>
-    `;
+  const handleUploadToIPFS = async () => {
+    try {
+      setIsUploading(true);
+      setError(null);
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Batch Certificate - ${batchNumber}</title>
-        ${styles}
-      </head>
-      <body>
-        ${certificateElement.innerHTML}
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 250);
+      const certificateData = getCertificateData();
+      const { ipfsHash: hash, metadata } = await uploadCertificateToIPFS(
+        certificateData,
+        userAddress || 'anonymous',
+        batchId
+      );
+
+      setIpfsHash(hash);
+      setCertificateMetadata(metadata);
+      alert(`Certificate uploaded to IPFS!\nHash: ${hash}`);
+    } catch (err) {
+      console.error('Error uploading to IPFS:', err);
+      setError('Failed to upload certificate to IPFS. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const shareCertificate = async () => {
@@ -194,14 +145,67 @@ export function BatchCertificate({
             Share
           </button>
           <button
-            onClick={generateCertificatePDF}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2"
+            onClick={handleUploadToIPFS}
+            disabled={isUploading}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Download className="w-4 h-4" />
-            Download
+            {isUploading ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Upload className="w-4 h-4" />
+            )}
+            {isUploading ? 'Uploading...' : 'Upload to IPFS'}
+          </button>
+          <button
+            onClick={handleDownloadPDF}
+            disabled={isGenerating}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isGenerating ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            {isGenerating ? 'Generating...' : 'Download PDF'}
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-800">{error}</p>
+        </div>
+      )}
+
+      {certificateMetadata && (
+        <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <div className="flex items-start gap-2 mb-2">
+            <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-emerald-800">Certificate Generated Successfully</p>
+              <p className="text-xs text-emerald-700 mt-1">
+                Certificate ID: {certificateMetadata.certificateId}
+              </p>
+              <p className="text-xs text-emerald-700">
+                Hash: {certificateMetadata.certificateHash.slice(0, 32)}...
+              </p>
+              {ipfsHash && (
+                <p className="text-xs text-emerald-700 mt-1">
+                  IPFS Hash: <a
+                    href={`https://gateway.pinata.cloud/ipfs/${ipfsHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-emerald-900"
+                  >
+                    {ipfsHash}
+                  </a>
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div id="certificate-content" className="certificate">
         <div className="header">
@@ -312,6 +316,32 @@ export function BatchCertificate({
           </div>
         </div>
 
+        {wasteMetrics && wasteMetrics.length > 0 && (
+          <div className="waste-summary" style={{ marginTop: '20px', padding: '15px', backgroundColor: '#fef2f2', borderRadius: '8px', border: '1px solid #fecaca' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: '#991b1b', marginBottom: '10px' }}>Waste Metrics Summary</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+              <div>
+                <div className="info-label" style={{ fontSize: '12px' }}>Total Waste</div>
+                <div className="info-value" style={{ fontSize: '14px', color: '#dc2626' }}>
+                  {wasteMetrics.reduce((sum, m) => sum + parseFloat(m.waste_quantity.toString()), 0).toFixed(2)} kg
+                </div>
+              </div>
+              <div>
+                <div className="info-label" style={{ fontSize: '12px' }}>Cost Impact</div>
+                <div className="info-value" style={{ fontSize: '14px', color: '#dc2626' }}>
+                  ${wasteMetrics.reduce((sum, m) => sum + parseFloat(m.cost_impact.toString()), 0).toFixed(2)}
+                </div>
+              </div>
+              <div>
+                <div className="info-label" style={{ fontSize: '12px' }}>Incidents</div>
+                <div className="info-value" style={{ fontSize: '14px', color: '#dc2626' }}>
+                  {wasteMetrics.length}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="blockchain-info">
           <div style={{ marginBottom: '10px' }}>
             <div className="blockchain-label">Network</div>
@@ -331,13 +361,48 @@ export function BatchCertificate({
               <div className="blockchain-value">{qrCode.ipfsHash}</div>
             </div>
           )}
+          {certificateMetadata && (
+            <div style={{ marginTop: '10px' }}>
+              <div className="blockchain-label">Certificate Hash</div>
+              <div className="blockchain-value">{certificateMetadata.certificateHash}</div>
+            </div>
+          )}
         </div>
 
+        {supplyChainData.collector && supplyChainData.tester && supplyChainData.processor && supplyChainData.manufacturer && (
+          <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: '#166534', marginBottom: '10px' }}>Participant Signatures</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '11px' }}>
+              <div>
+                <div style={{ fontWeight: 'bold', color: '#374151' }}>Collector</div>
+                <div style={{ color: '#6b7280', fontFamily: 'monospace' }}>{supplyChainData.collector.collectorAddress.slice(0, 10)}...</div>
+              </div>
+              <div>
+                <div style={{ fontWeight: 'bold', color: '#374151' }}>Tester</div>
+                <div style={{ color: '#6b7280', fontFamily: 'monospace' }}>{supplyChainData.tester.testerAddress.slice(0, 10)}...</div>
+              </div>
+              <div>
+                <div style={{ fontWeight: 'bold', color: '#374151' }}>Processor</div>
+                <div style={{ color: '#6b7280', fontFamily: 'monospace' }}>{supplyChainData.processor.processorAddress.slice(0, 10)}...</div>
+              </div>
+              <div>
+                <div style={{ fontWeight: 'bold', color: '#374151' }}>Manufacturer</div>
+                <div style={{ color: '#6b7280', fontFamily: 'monospace' }}>{supplyChainData.manufacturer.manufacturerAddress.slice(0, 10)}...</div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="footer">
-          <p>This certificate is digitally verified on the blockchain</p>
+          <p>This certificate is digitally verified on the blockchain and cannot be forged</p>
           <p style={{ marginTop: '5px' }}>
             Generated on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
           </p>
+          {certificateMetadata && (
+            <p style={{ marginTop: '5px', fontSize: '10px' }}>
+              Certificate ID: {certificateMetadata.certificateId}
+            </p>
+          )}
         </div>
       </div>
     </div>
