@@ -89,12 +89,19 @@ export function Web3AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         console.error('Error initializing Web3Auth:', error);
-      } finally {
-        setLoading(false);
       }
+
+      setLoading(false);
     };
 
-    init();
+    // Set loading to false after 3 seconds to show landing page even if Web3Auth fails
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 3000);
+
+    init().finally(() => clearTimeout(timeout));
+
+    return () => clearTimeout(timeout);
   }, []);
 
   const loadUserProfile = (address: string) => {
