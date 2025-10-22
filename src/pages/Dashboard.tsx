@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useWeb3Auth } from '../contexts/Web3AuthContext';
-import { Package, LogOut, Plus, List, TrendingDown, History, QrCode } from 'lucide-react';
+import { Package, LogOut, Plus, List, TrendingDown, History, QrCode, Bot, Sparkles } from 'lucide-react';
 import { WasteMetricForm } from '../components/WasteMetricForm';
 import { WasteMetricsList } from '../components/WasteMetricsList';
 import { WasteMetricsDashboard } from '../components/WasteMetricsDashboard';
@@ -15,6 +15,9 @@ import { ProcessorBatchDetailsModal } from '../components/ProcessorBatchDetailsM
 import { ManufacturerBatchForm, ManufacturerBatchFormData } from '../components/ManufacturerBatchForm';
 import { ManufacturerBatchList } from '../components/ManufacturerBatchList';
 import { ManufacturerBatchDetailsModal } from '../components/ManufacturerBatchDetailsModal';
+import { AIChatAssistant } from '../components/AIChatAssistant';
+import { AIInsightsWidget } from '../components/AIInsightsWidget';
+import { WastePatternAnalysis } from '../components/WastePatternAnalysis';
 import { WasteMetric, WastePhase } from '../types/waste';
 import { recordWasteMetric, getUniqueBatchIds } from '../services/wasteService';
 import { createCollectorBatch, CollectorBatch } from '../services/collectorBatchService';
@@ -30,7 +33,7 @@ const supabase = createClient(
 
 export function Dashboard() {
   const { userProfile, logout, walletAddress, userId } = useWeb3Auth();
-  const [activeTab, setActiveTab] = useState<'view' | 'create' | 'waste' | 'transactions'>('view');
+  const [activeTab, setActiveTab] = useState<'view' | 'create' | 'waste' | 'transactions' | 'ai'>('view');
   const [showWasteForm, setShowWasteForm] = useState(false);
   const [wasteMetrics, setWasteMetrics] = useState<WasteMetric[]>([]);
   const [isLoadingWaste, setIsLoadingWaste] = useState(false);
@@ -39,6 +42,7 @@ export function Dashboard() {
   const [selectedProcessorBatch, setSelectedProcessorBatch] = useState<ProcessorBatch | null>(null);
   const [selectedManufacturerBatch, setSelectedManufacturerBatch] = useState<ManufacturerBatch | null>(null);
   const [wasteAmount, setWasteAmount] = useState<number>(0);
+  const [showAIChat, setShowAIChat] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -216,6 +220,13 @@ export function Dashboard() {
             Waste Metrics
           </GlassButton>
           <GlassButton
+            onClick={() => setActiveTab('ai')}
+            variant={activeTab === 'ai' ? 'accent' : 'secondary'}
+          >
+            <Sparkles className="w-5 h-5" />
+            AI Insights
+          </GlassButton>
+          <GlassButton
             onClick={() => setActiveTab('transactions')}
             variant={activeTab === 'transactions' ? 'accent' : 'secondary'}
           >
@@ -224,7 +235,22 @@ export function Dashboard() {
           </GlassButton>
         </div>
 
-        {activeTab === 'waste' ? (
+        {activeTab === 'ai' ? (
+          <div className="space-y-6">
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <WastePatternAnalysis userId={userId || ''} />
+              </div>
+              <div>
+                <AIInsightsWidget
+                  userId={userId || ''}
+                  userRole={userProfile?.role || ''}
+                  onOpenChat={() => setShowAIChat(true)}
+                />
+              </div>
+            </div>
+          </div>
+        ) : activeTab === 'waste' ? (
           showWasteForm ? (
             <WasteMetricForm
               batchId="demo-batch-id"
@@ -306,6 +332,24 @@ export function Dashboard() {
             onClose={() => setSelectedManufacturerBatch(null)}
           />
         )}
+
+        <AIChatAssistant
+          userId={userId || ''}
+          userRole={userProfile?.role || ''}
+          isOpen={showAIChat}
+          onClose={() => setShowAIChat(false)}
+        />
+
+        <button
+          onClick={() => setShowAIChat(true)}
+          className="fixed bottom-6 right-6 p-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded-full shadow-glass shadow-blue-500/50 transition-all hover:scale-110 z-40 group"
+        >
+          <Bot className="w-6 h-6 text-white" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></span>
+          <span className="absolute right-full mr-3 px-3 py-2 bg-white/10 backdrop-blur-xl rounded-lg text-white text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity border border-white/20">
+            Ask AI Assistant
+          </span>
+        </button>
       </div>
     </div>
   );
